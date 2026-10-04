@@ -1,5 +1,4 @@
 import {
-  LogoMark,
   UniversityIcon,
   DashboardIcon,
   NewsIcon,
@@ -8,30 +7,41 @@ import {
   AnalyticsIcon,
   SettingsIcon,
   LogoutIcon,
-} from './Icons.jsx'
+} from "./Icons.jsx";
 
-function NavItem({ icon: Icon, label, active = false, danger = false }) {
+function NavItem({
+  icon: Icon,
+  label,
+  active = false,
+  danger = false,
+  href = "#",
+}) {
   return (
     <a
-      href="#"
+      href={href}
       className={`flex h-12 items-center gap-4 rounded-[10px] px-5 py-[10px] text-base leading-6 transition-colors ${
         active
-          ? 'bg-[#EEEDFD] font-semibold text-[#4F46E5]'
+          ? "bg-[#EEEDFD] font-semibold text-[#4F46E5]"
           : danger
-            ? 'font-normal text-[#D83030] hover:bg-[#FCEAEA]'
-            : 'font-normal text-[#454545] hover:bg-[#F3F3F3]'
+            ? "font-normal text-[#D83030] hover:bg-[#FCEAEA]"
+            : "font-normal text-[#454545] hover:bg-[#F3F3F3]"
       }`}
     >
-      <Icon className="h-6 w-6 shrink-0" stroke={active ? '#4F46E5' : danger ? '#D83030' : '#454545'} />
+      <Icon
+        className="h-6 w-6 shrink-0"
+        stroke={active ? "#4F46E5" : danger ? "#D83030" : "#454545"}
+      />
       {label}
     </a>
-  )
+  );
 }
 
 function MenuLabel({ children }) {
   return (
-    <p className="text-xs font-medium leading-4 tracking-[0.5px] text-[#454545]">{children}</p>
-  )
+    <p className="text-xs font-medium leading-4 tracking-[0.5px] text-[#454545]">
+      {children}
+    </p>
+  );
 }
 
 export default function Sidebar() {
@@ -40,8 +50,19 @@ export default function Sidebar() {
       <div className="flex flex-col gap-6">
         {/* Logo */}
         <div className="flex items-center gap-[7px]">
-          <img src="/logo-admin.svg" alt="Campus Update logo" className="h-[38px] w-8" />
-          <span className="text-2xl font-semibold leading-[26px] text-black">Campus Update</span>
+          <span
+            aria-hidden="true"
+            className="h-[38px] w-8 shrink-0 bg-[#4F46E5]"
+            style={{
+              maskImage: "url('/images/Group%201.svg')",
+              maskPosition: "center",
+              maskRepeat: "no-repeat",
+              maskSize: "contain",
+            }}
+          />
+          <span className="text-2xl font-semibold leading-[26px] text-black">
+            Campus Update
+          </span>
         </div>
 
         {/* Publishing-as card */}
@@ -52,7 +73,9 @@ export default function Sidebar() {
           >
             <UniversityIcon />
             <span className="flex flex-col gap-0.5">
-              <span className="text-[11px] font-medium leading-3 text-white/60">Publishing as</span>
+              <span className="text-[11px] font-medium leading-3 text-white/60">
+                Publishing as
+              </span>
               <span className="text-sm font-semibold leading-[15px] text-white">
                 Osun State University
               </span>
@@ -65,7 +88,7 @@ export default function Sidebar() {
           <MenuLabel>PUBLISHING</MenuLabel>
           <nav className="flex flex-col gap-1">
             <NavItem icon={DashboardIcon} label="Overview" active />
-            <NavItem icon={NewsIcon} label="School" />
+            <NavItem icon={NewsIcon} label="Schools" href="/schools" />
             <NavItem icon={NoteIcon} label="Users" />
           </nav>
         </div>
@@ -86,5 +109,5 @@ export default function Sidebar() {
         <NavItem icon={LogoutIcon} label="Logout" danger />
       </div>
     </aside>
-  )
+  );
 }
