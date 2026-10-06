@@ -87,8 +87,24 @@ export default function Sidebar() {
         <div className="flex flex-col gap-4">
           <MenuLabel>PUBLISHING</MenuLabel>
           <nav className="flex flex-col gap-1">
-            <NavItem icon={DashboardIcon} label="Overview" active />
-            <NavItem icon={NewsIcon} label="Schools" href="/schools" />
+            <NavItem
+              icon={DashboardIcon}
+              label="Overview"
+              href="/"
+              active={window.location.pathname === "/" || window.location.pathname === "/index.html"}
+            />
+            <NavItem
+              icon={NewsIcon}
+              label="Schools"
+              href="/schools"
+              active={window.location.pathname === "/schools"}
+            />
+            <NavItem
+              icon={NoteIcon}
+              label="School Administrators"
+              href="/school-administrators"
+              active={window.location.pathname === "/school-administrators"}
+            />
             <NavItem icon={NoteIcon} label="Users" />
           </nav>
         </div>

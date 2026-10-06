@@ -1,58 +1,106 @@
 import React, { useMemo, useState } from "react";
 
 /* ---------- data (replace with your API) ---------- */
-const lead = {
-  name: "Lead City University",
-  place: "Ibadan, Oyo · Pilot · FOCIT",
-  status: "Live",
-  students: 5240,
-  staff: 5240,
-  admins: 5,
-  content: 41,
-  initials: "LU",
-};
-const SCHOOLS = [
-  ...Array.from({ length: 21 }, (_, i) => ({ ...lead, id: i + 1 })),
+const ADMINS = [
   {
-    id: 8,
+    id: 1,
+    initials: "LU",
+    name: "Dr. O. Eboreime",
+    email: "o.eboreime@leadcity.example",
+    role: "Faculty administrator",
+    inst: "LCU",
+    scope: "FOCIT · news, events, announcements",
+    status: "Active",
+    last: "59 min ago",
+  },
+  {
+    id: 2,
     initials: "UI",
-    name: "University of Ibadan",
-    place: "Ibadan, Oyo · Agreement signed",
-    status: "Paused",
-    admins: 5,
-    content: 2,
+    name: "M. Athar",
+    email: "m.athar@leadcity.example",
+    role: "Department administrator",
+    inst: "LCU",
+    scope: "Computer Science · announcements only",
+    status: "Active",
+    last: "1 hour ago",
   },
   {
-    id: 9,
+    id: 3,
     initials: "UL",
-    name: "University of Lagos",
-    place: "Akoka, Lagos · First meeting held",
-    status: "Onboarding",
-    admins: 7,
-    content: 4,
+    name: "Registrar’s Office",
+    email: "registrar@leadcity.example",
+    role: "Institution administrator",
+    inst: "UI",
+    scope: "Full publishing rights, institution-wide",
+    status: "Active",
+    last: "2 hours ago",
   },
   {
-    id: 10,
+    id: 4,
     initials: "OU",
-    name: "Obafemi Awolowo University",
-    place: "Ile-Ife, Osun · Paused at school's request",
-    status: "Prospect",
-    admins: 4,
-    content: 25,
+    name: "Examinations Office",
+    email: "exams@leadcity.example",
+    role: "Department administrator",
+    inst: "UI",
+    scope: "FOCIT · announcements and calendar",
+    status: "Active",
+    last: "1 hour ago",
   },
+  {
+    id: 5,
+    initials: "OU",
+    name: "Dr. B. Akinola",
+    email: "b.akinola@ui.example",
+    role: "Institution administrator",
+    inst: "OAU",
+    scope: "Full publishing rights, institution-wide",
+    status: "Active",
+    last: "Not signed in yet",
+  },
+  {
+    id: 6,
+    initials: "OU",
+    name: "Prof. K. Adeyemi",
+    email: "k.adeyemi@oau.example",
+    role: "Institution administrator",
+    inst: "OAU",
+    scope: "Full publishing rights, institution-wide",
+    status: "Active",
+    last: "12 days ago",
+  },
+  {
+    id: 7,
+    initials: "OU",
+    name: "T. Ojo",
+    email: "t.ojo@oau.example",
+    role: "Institution administrator",
+    inst: "OAU",
+    scope: "Technology · news and announcements",
+    status: "Active",
+    last: "25 Mar",
+  },
+  ...[8, 9, 10].map((id) => ({
+    id,
+    initials: "OU",
+    name: "T. Ojo",
+    email: "t.ojo@oau.example",
+    role: "Faculty administrator",
+    inst: "4",
+    scope: "Technology · news and announcements",
+    status: "Active",
+    last: "25 Mar",
+  })),
 ];
 
 const SUMMARY = [
-  ["Institutions", "04", "On the platform"],
-  ["Live", "01", "Serving content to students"],
-  ["Onboarding / prospect", "02", "1 onboarding · 1 prospect"],
-  ["Deactivated", "03", "Content hidden"],
+  ["School administrators", "07", "+118 this week"],
+  ["Active", "06", "Can sign in and publish"],
+  ["Deactivated", "01", "Cannot sign in"],
+  ["Schools without an admin", "03", "Live or onboarding"],
 ];
 const CHIPS = [
   { key: "All", label: "Total:", n: "24" },
-  { key: "Live", label: "Live", n: "21", dot: "#16a34a" },
-  { key: "Onboarding", label: "Onboarding", n: "03", dot: "#d97706" },
-  { key: "Prospect", label: "Prospect", n: "03", dot: "#d97706" },
+  { key: "Active", label: "Active", n: "21", dot: "#16a34a" },
   { key: "Deactivated", label: "Deactivated", n: "03", dot: "#d97706" },
 ];
 const NAV = [
@@ -69,7 +117,7 @@ const NAV = [
   { group: "Commercial", items: ["External Events", "Announcements"] },
   { group: "Government", items: ["Audit log", "Analytics"] },
 ];
-const fmt = (n) => (n == null ? "--" : n.toLocaleString("en-US"));
+const ACTIVE_NAV = "School Administrators";
 
 /* ---------- icons ---------- */
 const Svg = ({ children, size = 22, sw = 1.6 }) => (
@@ -164,35 +212,47 @@ const ICONS = {
 };
 
 /* ---------- page ---------- */
-export default function SchoolsPage() {
+export default function SchoolAdministratorsPage() {
   const [q, setQ] = useState("");
+  const [inst, setInst] = useState("All");
   const [status, setStatus] = useState("All");
   const [sort, setSort] = useState({ key: null, dir: 1 });
   const [page, setPage] = useState(1);
-  const [per, setPer] = useState(10);
+  const [per, setPer] = useState(48);
+
+  const institutions = useMemo(
+    () => [...new Set(ADMINS.map((a) => a.inst))],
+    [],
+  );
 
   const rows = useMemo(() => {
-    let r = SCHOOLS.filter(
-      (s) =>
-        (status === "All" || s.status === status) &&
-        `${s.name} ${s.place} ${s.status}`
+    let r = ADMINS.filter(
+      (a) =>
+        (status === "All" || a.status === status) &&
+        (inst === "All" || a.inst === inst) &&
+        `${a.name} ${a.email} ${a.role} ${a.scope}`
           .toLowerCase()
           .includes(q.toLowerCase()),
     );
     if (sort.key)
-      r = [...r].sort((a, b) => {
-        const x = a[sort.key] ?? -1,
-          y = b[sort.key] ?? -1;
-        return (x > y ? 1 : x < y ? -1 : 0) * sort.dir;
-      });
+      r = [...r].sort(
+        (a, b) =>
+          (a[sort.key] > b[sort.key] ? 1 : a[sort.key] < b[sort.key] ? -1 : 0) *
+          sort.dir,
+      );
     return r;
-  }, [q, status, sort]);
+  }, [q, inst, status, sort]);
 
   const pages = Math.max(1, Math.ceil(rows.length / per));
   const cur = Math.min(page, pages);
   const shown = rows.slice((cur - 1) * per, cur * per);
+  const reset = (fn) => (e) => {
+    fn(e.target.value);
+    setPage(1);
+  };
   const clear = () => {
     setQ("");
+    setInst("All");
     setStatus("All");
     setSort({ key: null, dir: 1 });
     setPage(1);
@@ -234,8 +294,8 @@ export default function SchoolsPage() {
               <button
                 key={n}
                 type="button"
-                className={"cu-nav" + (n === "Schools" ? " on" : "")}
-                aria-current={n === "Schools" ? "page" : undefined}
+                className={"cu-nav" + (n === ACTIVE_NAV ? " on" : "")}
+                aria-current={n === ACTIVE_NAV ? "page" : undefined}
                 onClick={() => {
                   const targets = {
                     Overview: "/",
@@ -265,8 +325,8 @@ export default function SchoolsPage() {
       <main className="cu-main">
         <header className="cu-top">
           <div>
-            <h1>Schools</h1>
-            <p>Add, edit and activate institutions</p>
+            <h1>School administrators</h1>
+            <p>Who can publish, and where</p>
           </div>
           <div style={{ flex: 1 }} />
           <button type="button" className="cu-bell" aria-label="Notifications">
@@ -294,7 +354,7 @@ export default function SchoolsPage() {
                 <circle cx="12" cy="12" r="9.5" />
                 <path d="M12 8v8M8 12h8" />
               </Svg>{" "}
-              Add New School
+              Add New Administrator
             </button>
           </div>
 
@@ -316,27 +376,32 @@ export default function SchoolsPage() {
               </Svg>
               <input
                 value={q}
-                onChange={(e) => {
-                  setQ(e.target.value);
-                  setPage(1);
-                }}
-                placeholder="Search by name, email, role..."
-                aria-label="Search schools"
+                onChange={reset(setQ)}
+                placeholder="Search administrator..."
+                aria-label="Search administrators"
               />
             </label>
             <label className="cu-sel">
               <select
+                value={inst}
+                onChange={reset(setInst)}
+                aria-label="Filter by institution"
+              >
+                <option value="All">All Institutions</option>
+                {institutions.map((i) => (
+                  <option key={i}>{i}</option>
+                ))}
+              </select>
+            </label>
+            <label className="cu-sel">
+              <select
                 value={status}
-                onChange={(e) => {
-                  setStatus(e.target.value);
-                  setPage(1);
-                }}
+                onChange={reset(setStatus)}
                 aria-label="Filter by status"
               >
                 <option value="All">All Statuses</option>
-                {["Live", "Paused", "Onboarding", "Prospect"].map((s) => (
-                  <option key={s}>{s}</option>
-                ))}
+                <option>Active</option>
+                <option>Deactivated</option>
               </select>
             </label>
             <button type="button" className="cu-clear" onClick={clear}>
@@ -366,44 +431,48 @@ export default function SchoolsPage() {
               <table>
                 <thead>
                   <tr>
-                    <Th label="INSTITUTION" k="name" />
+                    <Th label="ADMINISTRATOR" k="name" />
+                    <Th label="ROLE" k="role" />
+                    <Th label="INSTITUTIONS" k="inst" />
+                    <Th label="SCOPE" k="scope" />
                     <Th label="STATUS" k="status" />
-                    <Th label="STUDENTS" k="students" />
-                    <Th label="STAFFS" k="staff" />
-                    <Th label="ADMINS" k="admins" />
-                    <Th label="LIVE CONTENTS" k="content" />
+                    <Th label="LAST ACTIVE" k="last" />
                     <th scope="col" className="r">
                       ACTION
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {shown.map((s) => (
-                    <tr key={s.id} className={s.status === "Live" ? "" : "alt"}>
+                  {shown.map((a) => (
+                    <tr key={a.id}>
                       <td>
                         <div className="cu-inst">
-                          <span className="cu-ini">{s.initials}</span>
+                          <span className="cu-ini">{a.initials}</span>
                           <div>
-                            <b>{s.name}</b>
-                            <small>{s.place}</small>
+                            <b>{a.name}</b>
+                            <small>{a.email}</small>
                           </div>
                         </div>
                       </td>
+                      <td>{a.role}</td>
+                      <td>{a.inst}</td>
+                      <td className="mut">{a.scope}</td>
                       <td>
-                        <span className="cu-pill">
+                        <span
+                          className={
+                            "cu-pill" + (a.status === "Active" ? "" : " w")
+                          }
+                        >
                           <i />
-                          {s.status}
+                          {a.status}
                         </span>
                       </td>
-                      <td>{fmt(s.students)}</td>
-                      <td>{fmt(s.staff)}</td>
-                      <td>{s.admins}</td>
-                      <td className="mut">{s.content}</td>
+                      <td className="mut2">{a.last}</td>
                       <td className="r">
                         <button
                           type="button"
                           className="cu-more"
-                          aria-label={`Actions for ${s.name}`}
+                          aria-label={`Actions for ${a.name}`}
                         >
                           •••
                         </button>
@@ -413,8 +482,8 @@ export default function SchoolsPage() {
                   {!shown.length && (
                     <tr>
                       <td colSpan={7} className="cu-empty">
-                        No schools match these filters. Clear filters to see all
-                        institutions.
+                        No administrators match these filters. Clear filters to
+                        see everyone.
                       </td>
                     </tr>
                   )}
@@ -478,9 +547,9 @@ export default function SchoolsPage() {
   );
 }
 
-/* ---------- styles (scoped with the cu- prefix; move to your CSS/Tailwind setup as needed) ---------- */
+/* ---------- styles (same shell as SchoolsPage; extract into a shared layout when you wire up routing) ---------- */
 const CSS = `
-.cu-app{--bg:#f4f4f5;--panel:#fff;--soft:#fafafa;--text:#18181b;--muted:#71717a;--line:#e4e4e7;--brand:#4f46e5;--brand-soft:#e0e7ff;--navy:#1e1b4b;--green:#15803d;--green-bg:#dcfce7;
+.cu-app{--bg:#f4f4f5;--panel:#fff;--soft:#fafafa;--text:#18181b;--muted:#71717a;--line:#e4e4e7;--brand:#4f46e5;--brand-soft:#e0e7ff;--navy:#1e1b4b;--green:#15803d;--green-bg:#dcfce7;--amber:#b45309;--amber-bg:#fef3c7;
  display:grid;grid-template-columns:272px 1fr;gap:16px;padding:12px;min-height:100vh;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:15px;box-sizing:border-box}
 .cu-app *{box-sizing:border-box}
 .cu-app button,.cu-app input,.cu-app select{font:inherit;color:inherit}
@@ -506,7 +575,7 @@ const CSS = `
 .cu-bell{position:relative;width:48px;height:48px;border-radius:50%;border:0;background:var(--soft);display:grid;place-items:center}
 .cu-bell i{position:absolute;top:10px;right:11px;width:9px;height:9px;border-radius:50%;background:#ea580c}
 .cu-user{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:40px;padding:8px 18px 8px 8px}
-.cu-av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#a8a29e,#44403c);flex:none}
+.cu-av{width:24px;height:24px;border-radius:50%;object-fit:cover;flex:none}
 .cu-user b{display:block;font-weight:600}
 .cu-user small{color:var(--muted)}
 .cu-body{background:var(--panel);border-radius:16px;padding:28px 32px;flex:1;min-width:0}
@@ -531,20 +600,21 @@ const CSS = `
 .cu-chip b{font-weight:600}
 .cu-table-wrap{border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .cu-scroll{overflow-x:auto}
-.cu-app table{width:100%;border-collapse:collapse;min-width:820px}
+.cu-app table{width:100%;border-collapse:collapse;min-width:980px}
 .cu-app th{font-size:12px;font-weight:600;color:var(--muted);text-align:left;padding:16px 20px;background:var(--soft);border-bottom:1px solid var(--line);white-space:nowrap}
 .cu-app th button{border:0;background:none;padding:0;font-size:12px;font-weight:600;color:var(--muted)}
 .cu-sort{margin-left:6px;opacity:.6}
 .cu-app td{padding:16px 20px;border-bottom:1px solid var(--line)}
-.cu-app tr.alt td{background:var(--soft)}
 .cu-app .r{text-align:right}
 .cu-inst{display:flex;align-items:center;gap:12px}
 .cu-ini{width:44px;height:44px;border-radius:50%;background:var(--brand-soft);color:var(--navy);font-weight:600;font-size:14px;display:grid;place-items:center;flex:none}
 .cu-inst b{display:block;font-weight:600}
 .cu-inst small{color:var(--muted);font-size:14px}
 .cu-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:20px;background:var(--green-bg);color:var(--green);font-size:15px}
+.cu-pill.w{background:var(--amber-bg);color:var(--amber)}
 .cu-pill i{width:7px;height:7px;border-radius:50%;background:currentColor}
 .mut{color:var(--muted)}
+.mut2{color:#3f3f46}
 .cu-more{border:0;background:none;font-size:20px;letter-spacing:1px;color:#52525b}
 .cu-foot{display:flex;align-items:center;gap:16px;padding:16px 20px;color:var(--muted);flex-wrap:wrap}
 .cu-foot .cu-sel{color:var(--text)}
@@ -563,69 +633,5 @@ const CSS = `
  .cu-body{padding:18px}
  .cu-stats{grid-template-columns:1fr}
  .cu-add{height:48px;font-size:16px}
-}
-.cu-app{grid-template-columns:180px minmax(0,1fr);gap:12px;padding:3px;font-size:9px}
-.cu-side{padding:14px;top:3px;height:calc(100vh - 6px);border-radius:6px}
-.cu-logo{gap:4px;font-size:14px;margin-bottom:10px}
-.cu-logo svg{width:24px;height:24px}
-.cu-pub{padding:8px;border-radius:9px;margin-bottom:10px}
-.cu-pub-in{gap:6px;padding:6px;border-radius:6px}
-.cu-pub-in small{font-size:7px}
-.cu-pub-in b{font-size:8px}
-.cu-grp{font-size:7px;margin:12px 0 4px}
-.cu-nav{gap:8px;padding:6px;border-radius:6px;font-size:9px}
-.cu-nav svg{width:13px;height:13px}
-.cu-main{gap:8px}
-.cu-top{border-radius:6px;padding:8px 14px;gap:10px;min-height:56px}
-.cu-top h1{font-size:14px}
-.cu-top p{font-size:9px}
-.cu-bell{width:32px;height:32px}
-.cu-bell svg{width:18px;height:18px}
-.cu-user{gap:7px;padding:4px 10px 4px 4px}
-.cu-av{width:24px;height:24px;object-fit:cover}
-.cu-user b{font-size:9px}
-.cu-user small{font-size:7px}
-.cu-user svg{width:14px;height:14px}
-.cu-body{padding:16px 24px;border-radius:6px}
-.cu-add{gap:6px;padding:0 18px;height:35px;font-size:10px}
-.cu-add svg{width:14px;height:14px}
-.cu-stats{grid-template-columns:repeat(4,1fr);gap:10px;margin:8px 0 16px}
-.cu-stat{padding:11px 15px;border-radius:9px}
-.cu-stat h3{margin-bottom:10px;font-size:10px}
-.cu-stat strong{font-size:20px;margin-bottom:8px}
-.cu-stat span{font-size:9px}
-.cu-bar{gap:7px}
-.cu-search{gap:5px;padding:0 8px;height:25px;width:min(180px,100%)}
-.cu-search svg{width:13px;height:13px}
-.cu-search input{font-size:8px}
-.cu-sel{height:25px;padding:0 5px;border-radius:5px}
-.cu-sel select{font-size:8px;padding:0 2px}
-.cu-clear{font-size:8px}
-.cu-chips{gap:5px;margin:15px 0 11px}
-.cu-chip{gap:5px;padding:0 8px;height:25px;border-radius:5px;font-size:8px}
-.cu-chip i{width:5px;height:5px}
-.cu-table-wrap{border-radius:6px}
-.cu-app table{min-width:650px}
-.cu-app th{font-size:6px;padding:6px 8px}
-.cu-app th button{font-size:6px}
-.cu-app td{padding:7px 8px;font-size:8px}
-.cu-sort{margin-left:3px}
-.cu-inst{gap:7px}
-.cu-ini{width:20px;height:20px;font-size:7px}
-.cu-inst b{font-size:8px}
-.cu-inst small{font-size:7px}
-.cu-pill{gap:4px;padding:2px 7px;font-size:7px}
-.cu-pill i{width:4px;height:4px}
-.cu-more{font-size:12px}
-.cu-foot{gap:8px;padding:7px 8px;font-size:7px}
-.cu-foot .cu-sel{height:20px}
-.cu-pg{gap:4px}
-.cu-pg button{width:17px;height:17px;border-radius:4px;font-size:8px}
-@media(max-width:860px){
- .cu-app{grid-template-columns:1fr}
- .cu-side{position:static;height:auto}
- .cu-user div,.cu-user svg{display:none}
- .cu-body{padding:12px}
- .cu-stats{grid-template-columns:repeat(2,1fr)}
 }
 `;
