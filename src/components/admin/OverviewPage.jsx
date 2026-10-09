@@ -74,11 +74,11 @@ function CardHeader({ title, action }) {
   )
 }
 
-export default function OverviewPage() {
+export default function OverviewPage({ onNavigate }) {
   const [navOpen, setNavOpen] = useState(false)
   return (
     <div className="flex min-h-screen gap-[15px] bg-[#F3F3F3] p-[5px] font-sans md:p-[15px]">
-      <Sidebar open={navOpen} onClose={() => setNavOpen(false)} onNavigate={() => {}} />
+      <Sidebar open={navOpen} onClose={() => setNavOpen(false)} onNavigate={onNavigate} />
 
       <main className="flex min-w-0 flex-1 flex-col gap-3">
         <Topbar onMenu={() => setNavOpen(true)} />

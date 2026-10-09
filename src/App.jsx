@@ -37,5 +37,5 @@ export default function App() {
   if (route.page === 'content') return <ContentMonitoringPage onNavigate={navigate} />
   if (route.page === 'events') return <ExternalEventsPage onNavigate={navigate} />
   if (route.page === 'ads') return <AdvertisementsPage onNavigate={navigate} />
-  return <OverviewPage />
+  return <OverviewPage onNavigate={navigate} />
 }
