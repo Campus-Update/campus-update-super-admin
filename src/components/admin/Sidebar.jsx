@@ -31,7 +31,7 @@ const SECTIONS = [
     label: 'COMMERCIAL',
     items: [
       { id: 'events', icon: CalendarIcon, label: 'External Events' },
-      { id: 'announcements', icon: MegaphoneIcon, label: 'Announcements' },
+      { id: 'ads', icon: MegaphoneIcon, label: 'Advertisements' },
     ],
   },
   {

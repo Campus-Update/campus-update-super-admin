@@ -75,14 +75,25 @@ export function PageCountFooter({ left = 'Showing 1–10 of 24 results', right =
   )
 }
 
-export const TH = ({ children, sort = false, className = '' }) => (
+export const TH = ({ children, sort = false, className = '', onSort }) => (
   <th className={`h-10 whitespace-nowrap bg-[#F9FAFB] px-4 py-3 text-left text-[11px] font-semibold uppercase leading-3 tracking-[0.5px] text-[#6B7280] ${sort ? 'cursor-pointer select-none' : ''} ${className}`}>
     <span className="inline-flex items-center gap-1">
-      {children}
-      {sort && (
-        <svg viewBox="0 0 12 12" className="h-3 w-3" stroke="#9CA3AF" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M6 2.5v7M3.5 5 6 2.5 8.5 5M3.5 7 6 9.5 8.5 7" />
-        </svg>
+      {onSort ? (
+        <button type="button" onClick={onSort} className="inline-flex items-center gap-1 uppercase">
+          {children}
+          <svg viewBox="0 0 12 12" className="h-3 w-3" stroke="#9CA3AF" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 2.5v7M3.5 5 6 2.5 8.5 5M3.5 7 6 9.5 8.5 7" />
+          </svg>
+        </button>
+      ) : (
+        <>
+          {children}
+          {sort && (
+            <svg viewBox="0 0 12 12" className="h-3 w-3" stroke="#9CA3AF" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 2.5v7M3.5 5 6 2.5 8.5 5M3.5 7 6 9.5 8.5 7" />
+            </svg>
+          )}
+        </>
       )}
     </span>
   </th>
