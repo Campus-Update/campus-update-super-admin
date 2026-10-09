@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from "react";
+import Sidebar from "./components/admin/Sidebar.jsx";
+import Topbar from "./components/admin/Topbar.jsx";
 
 /* ---------- data (replace with your API) ---------- */
-const ADMINS = [
+export const ADMINS = [
   {
     id: 1,
     initials: "LU",
@@ -103,22 +105,6 @@ const CHIPS = [
   { key: "Active", label: "Active", n: "21", dot: "#16a34a" },
   { key: "Deactivated", label: "Deactivated", n: "03", dot: "#d97706" },
 ];
-const NAV = [
-  {
-    group: "Publishing",
-    items: [
-      "Overview",
-      "Schools",
-      "School Administrators",
-      "Users",
-      "Content Monitoring",
-    ],
-  },
-  { group: "Commercial", items: ["External Events", "Announcements"] },
-  { group: "Government", items: ["Audit log", "Analytics"] },
-];
-const ACTIVE_NAV = "School Administrators";
-
 /* ---------- icons ---------- */
 const Svg = ({ children, size = 22, sw = 1.6 }) => (
   <svg
@@ -135,90 +121,17 @@ const Svg = ({ children, size = 22, sw = 1.6 }) => (
     {children}
   </svg>
 );
-const ICONS = {
-  Overview: (
-    <Svg>
-      <circle cx="7" cy="7" r="3.5" />
-      <circle cx="17" cy="7" r="3.5" />
-      <circle cx="7" cy="17" r="3.5" />
-      <circle cx="17" cy="17" r="3.5" />
-    </Svg>
-  ),
-  Schools: (
-    <Svg>
-      <rect x="3" y="4" width="18" height="16" rx="3" />
-      <path d="M8 9h8M8 13h8M8 17h4" />
-    </Svg>
-  ),
-  "School Administrators": (
-    <Svg>
-      <path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z" />
-      <path d="M12 3v18M4 12h16" />
-    </Svg>
-  ),
-  Users: (
-    <Svg>
-      <circle cx="9" cy="8" r="3.5" />
-      <path d="M2.5 20c0-4 3-6 6.5-6s6.5 2 6.5 6" />
-      <circle cx="17" cy="9" r="2.5" />
-      <path d="M17 14c3 0 5 1.5 5 5" />
-    </Svg>
-  ),
-  "Content Monitoring": (
-    <Svg>
-      <path d="M4 7h16l-1 12H5z" />
-      <circle cx="12" cy="13" r="3" />
-      <path d="M6 4h12" />
-    </Svg>
-  ),
-  "External Events": (
-    <Svg>
-      <circle cx="9" cy="8" r="3.5" />
-      <path d="M2.5 20c0-4 3-6 6.5-6s6.5 2 6.5 6" />
-      <path d="M18 4v6M15 7h6" />
-    </Svg>
-  ),
-  Announcements: (
-    <Svg>
-      <rect x="3" y="5" width="18" height="15" rx="3" />
-      <path d="M8 16v-4M12 16V9M16 16v-2" />
-    </Svg>
-  ),
-  "Audit log": (
-    <Svg>
-      <circle cx="9" cy="8" r="3.5" />
-      <path d="M2.5 20c0-4 3-6 6.5-6s6.5 2 6.5 6" />
-      <path d="M17 14l1.5 1.5L22 12" />
-    </Svg>
-  ),
-  Analytics: (
-    <Svg>
-      <rect x="3" y="5" width="18" height="15" rx="3" />
-      <path d="M8 16v-4M12 16V9M16 16v-2" />
-    </Svg>
-  ),
-  Settings: (
-    <Svg>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" />
-    </Svg>
-  ),
-  Logout: (
-    <Svg>
-      <path d="M10 4H6a2 2 0 00-2 2v12a2 2 0 002 2h4" />
-      <path d="M14 8l4 4-4 4M18 12H9" />
-    </Svg>
-  ),
-};
-
 /* ---------- page ---------- */
 export default function SchoolAdministratorsPage() {
+  const [admins, setAdmins] = useState(ADMINS);
   const [q, setQ] = useState("");
   const [inst, setInst] = useState("All");
   const [status, setStatus] = useState("All");
   const [sort, setSort] = useState({ key: null, dir: 1 });
   const [page, setPage] = useState(1);
   const [per, setPer] = useState(48);
+  const [isAddAdminOpen, setIsAddAdminOpen] = useState(false);
+  const [addedAdmin, setAddedAdmin] = useState(null);
 
   const institutions = useMemo(
     () => [...new Set(ADMINS.map((a) => a.inst))],
@@ -226,7 +139,7 @@ export default function SchoolAdministratorsPage() {
   );
 
   const rows = useMemo(() => {
-    let r = ADMINS.filter(
+    let r = admins.filter(
       (a) =>
         (status === "All" || a.status === status) &&
         (inst === "All" || a.inst === inst) &&
@@ -241,7 +154,7 @@ export default function SchoolAdministratorsPage() {
           sort.dir,
       );
     return r;
-  }, [q, inst, status, sort]);
+  }, [admins, q, inst, status, sort]);
 
   const pages = Math.max(1, Math.ceil(rows.length / per));
   const cur = Math.min(page, pages);
@@ -259,6 +172,37 @@ export default function SchoolAdministratorsPage() {
   };
   const sortBy = (key) =>
     setSort((s) => ({ key, dir: s.key === key ? -s.dir : 1 }));
+  const closeAddAdmin = () => {
+    setIsAddAdminOpen(false);
+    setAddedAdmin(null);
+  };
+  const addAdministrator = (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const firstName = formData.get("firstName").trim();
+    const lastName = formData.get("lastName").trim();
+    const name = `${firstName} ${lastName}`;
+    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    const newAdmin = {
+      id: Math.max(0, ...admins.map((admin) => admin.id)) + 1,
+      initials,
+      name,
+      email: formData.get("email").trim(),
+      role: formData.get("role"),
+      inst: formData.get("institution"),
+      scope: formData.get("scope").trim(),
+      status: "Active",
+      last: "Not signed in yet",
+      addedAt: new Date(),
+    };
+
+    setAdmins((currentAdmins) => [newAdmin, ...currentAdmins]);
+    setQ("");
+    setInst("All");
+    setStatus("All");
+    setPage(1);
+    setAddedAdmin(newAdmin);
+  };
   const Th = ({ label, k }) => (
     <th scope="col">
       <button type="button" onClick={() => sortBy(k)}>
@@ -272,84 +216,24 @@ export default function SchoolAdministratorsPage() {
     <div className="cu-app">
       <style>{CSS}</style>
 
-      <aside className="cu-side">
-        <div className="cu-logo">
-          <span className="cu-logo-mark" aria-hidden="true" /> Campus Update
-        </div>
-        <div className="cu-pub">
-          <div className="cu-pub-in">
-            <Svg size={20} sw={1.4}>
-              <path d="M4 21V9l8-5 8 5v12M9 21v-6h6v6M3 21h18" />
-            </Svg>
-            <div>
-              <small>Publishing as</small>
-              <b>Campus Update</b>
-            </div>
-          </div>
-        </div>
-        {NAV.map((g) => (
-          <div key={g.group}>
-            <div className="cu-grp">{g.group}</div>
-            {g.items.map((n) => (
-              <button
-                key={n}
-                type="button"
-                className={"cu-nav" + (n === ACTIVE_NAV ? " on" : "")}
-                aria-current={n === ACTIVE_NAV ? "page" : undefined}
-                onClick={() => {
-                  const targets = {
-                    Overview: "/",
-                    Schools: "/schools",
-                    "School Administrators": "/school-administrators",
-                  };
-
-                  if (targets[n]) {
-                    window.location.href = targets[n];
-                  }
-                }}
-              >
-                {ICONS[n]} {n}
-              </button>
-            ))}
-          </div>
-        ))}
-        <div style={{ flex: 1 }} />
-        <button type="button" className="cu-nav">
-          {ICONS.Settings} Settings
-        </button>
-        <button type="button" className="cu-nav cu-logout">
-          {ICONS.Logout} Logout
-        </button>
-      </aside>
+      <Sidebar activeItem="School Administrators" />
 
       <main className="cu-main">
-        <header className="cu-top">
-          <div>
-            <h1>School administrators</h1>
-            <p>Who can publish, and where</p>
-          </div>
-          <div style={{ flex: 1 }} />
-          <button type="button" className="cu-bell" aria-label="Notifications">
-            <Svg size={26} sw={1.4}>
-              <path d="M6 17v-6a6 6 0 0112 0v6l2 2H4zM10 21h4" />
-            </Svg>
-            <i />
-          </button>
-          <div className="cu-user">
-            <img className="cu-av" src="/images/avatar-john.png" alt="" />
-            <div>
-              <b>John Doe</b>
-              <small>Faculty Administrator</small>
-            </div>
-            <Svg size={20} sw={1.8}>
-              <path d="M6 9l6 6 6-6" />
-            </Svg>
-          </div>
-        </header>
+        <Topbar
+          title="School administrators"
+          subtitle="Who can publish, and where"
+        />
 
         <section className="cu-body">
           <div className="cu-row-end">
-            <button type="button" className="cu-add">
+            <button
+              type="button"
+              className="cu-add"
+              onClick={() => {
+                setAddedAdmin(null);
+                setIsAddAdminOpen(true);
+              }}
+            >
               <Svg size={26} sw={1.4}>
                 <circle cx="12" cy="12" r="9.5" />
                 <path d="M12 8v8M8 12h8" />
@@ -543,6 +427,209 @@ export default function SchoolAdministratorsPage() {
           </div>
         </section>
       </main>
+      {isAddAdminOpen && (
+        <div
+          className="cu-modal-backdrop"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeAddAdmin();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") closeAddAdmin();
+          }}
+        >
+          <section
+            className={`cu-admin-modal${addedAdmin ? " cu-admin-success" : ""}`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={
+              addedAdmin ? "cu-admin-success-title" : "cu-add-admin-title"
+            }
+          >
+            {addedAdmin ? (
+              <div className="cu-admin-success-content">
+                <div className="cu-admin-success-icon" aria-hidden="true">
+                  <svg viewBox="0 0 80 80" fill="none">
+                    <path
+                      d="M40 2c5 0 8 6 13 7s11-2 15 2 1 10 4 15 8 7 8 14-5 10-8 15 0 11-4 15-10 1-15 4-8 8-13 8-8-6-13-8-11 2-15-2-1-10-4-15S0 50 0 40s5-10 8-15 0-11 4-15 10-1 15-4 8-4 13-4Z"
+                      fill="#CCFFC8"
+                    />
+                    <path
+                      d="m23 41 10 10 24-26"
+                      stroke="#059669"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <h2 id="cu-admin-success-title">
+                  Administrator Added Successfully
+                </h2>
+                <p className="cu-admin-success-message">
+                  {addedAdmin.name} has been successfully added to the system.
+                  An invitation email with login credentials will be sent when
+                  email delivery is configured.
+                </p>
+                <dl className="cu-admin-success-details">
+                  <div>
+                    <dt>Name</dt>
+                    <dd>{addedAdmin.name}</dd>
+                  </div>
+                  <div>
+                    <dt>Email</dt>
+                    <dd>{addedAdmin.email}</dd>
+                  </div>
+                  <div>
+                    <dt>Role</dt>
+                    <dd>{addedAdmin.role}</dd>
+                  </div>
+                  <div>
+                    <dt>Institution</dt>
+                    <dd>
+                      {{
+                        LCU: "Leadcity University",
+                        UI: "University of Ibadan",
+                        OAU: "Obafemi Awolowo University",
+                      }[addedAdmin.inst] ?? addedAdmin.inst}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Status</dt>
+                    <dd className="cu-admin-success-status">
+                      {addedAdmin.status}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Added on</dt>
+                    <dd>
+                      {addedAdmin.addedAt.toLocaleString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </dd>
+                  </div>
+                </dl>
+                <footer className="cu-admin-success-footer">
+                  <button
+                    type="button"
+                    className="cu-admin-success-close"
+                    onClick={closeAddAdmin}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    className="cu-admin-success-back"
+                    onClick={closeAddAdmin}
+                  >
+                    Back to School Administrator
+                  </button>
+                </footer>
+              </div>
+            ) : (
+            <>
+            <header className="cu-admin-modal-header">
+              <div>
+                <h2 id="cu-add-admin-title">Add school administrator</h2>
+                <p>
+                  They can publish only for the institutions you associate them
+                  with.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="cu-modal-close"
+                onClick={closeAddAdmin}
+                aria-label="Close add administrator form"
+              >
+                <Svg size={17} sw={1.5}>
+                  <path d="m6 6 12 12M18 6 6 18" />
+                </Svg>
+              </button>
+            </header>
+            <form className="cu-admin-form" onSubmit={addAdministrator}>
+              <label className="cu-admin-field">
+                <span>
+                  Full name <i>*</i>
+                </span>
+                <input
+                  name="firstName"
+                  placeholder="e.g. Aisha"
+                  autoFocus
+                  required
+                />
+              </label>
+              <label className="cu-admin-field">
+                <span>
+                  Last Name <i>*</i>
+                </span>
+                <input name="lastName" placeholder="e.g. Bello" required />
+              </label>
+              <label className="cu-admin-field cu-admin-field-full">
+                <span>
+                  Email Address <i>*</i>
+                </span>
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="Enter email address"
+                  required
+                />
+              </label>
+              <label className="cu-admin-field">
+                <span>
+                  Role <i>*</i>
+                </span>
+                <select name="role" defaultValue="" required>
+                  <option value="" disabled>
+                    Select a role
+                  </option>
+                  {[...new Set(ADMINS.map((admin) => admin.role))].map(
+                    (role) => (
+                      <option key={role}>{role}</option>
+                    ),
+                  )}
+                </select>
+              </label>
+              <label className="cu-admin-field">
+                <span>
+                  Institution <i>*</i>
+                </span>
+                <select name="institution" defaultValue="" required>
+                  <option value="" disabled>
+                    Select institution
+                  </option>
+                  {institutions.map((institution) => (
+                    <option key={institution}>{institution}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="cu-admin-field cu-admin-field-full">
+                <span>Scope</span>
+                <small>What this administrator is allowed to publish, and to whom.</small>
+                <input name="scope" placeholder="e.g FOCIT" />
+              </label>
+              <footer className="cu-admin-modal-footer">
+                <button
+                  type="button"
+                  className="cu-admin-cancel"
+                  onClick={closeAddAdmin}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="cu-admin-submit">
+                  Add administrator
+                </button>
+              </footer>
+            </form>
+            </>
+            )}
+          </section>
+        </div>
+      )}
     </div>
   );
 }
@@ -623,6 +710,43 @@ const CSS = `
 .cu-pg button.on{background:var(--brand);border-color:var(--brand);color:#fff}
 .cu-pg button:disabled{opacity:.4;cursor:default}
 .cu-empty{text-align:center;padding:40px!important;color:var(--muted)}
+.cu-modal-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:16px;background:rgba(24,24,27,.24);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.cu-admin-modal{width:min(360px,100%);max-height:calc(100vh - 32px);overflow-y:auto;border-radius:10px;background:#fff;padding:16px;color:#27272a;box-shadow:0 16px 48px rgba(24,24,27,.18)}
+.cu-admin-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.cu-admin-modal-header h2{margin:0 0 4px;font-size:13px;font-weight:600;line-height:1.4}
+.cu-admin-modal-header p{margin:0;color:#52525b;font-size:8px;line-height:1.5}
+.cu-admin-modal-header .cu-modal-close{display:grid;place-items:center;width:22px;height:22px;flex:none;padding:0;border:0;background:transparent;color:#52525b}
+.cu-admin-form{display:grid;grid-template-columns:1fr 1fr;column-gap:9px;row-gap:8px}
+.cu-admin-field{display:flex;min-width:0;flex-direction:column;gap:4px}
+.cu-admin-field-full{grid-column:1/-1}
+.cu-admin-field>span{font-size:8px;line-height:1.3;color:#27272a}
+.cu-admin-field>span i{color:#ef4444;font-style:normal}
+.cu-admin-field>small{margin-top:-2px;color:#71717a;font-size:7px;line-height:1.3}
+.cu-admin-field input,.cu-admin-field select{width:100%;height:33px;min-width:0;border:1px solid #d4d4d8;border-radius:6px;background:#fff;padding:0 12px;font-size:8px;color:#27272a}
+.cu-admin-field input::placeholder{color:#52525b;opacity:1}
+.cu-admin-field select{padding-right:7px;color:#52525b}
+.cu-admin-modal-footer{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;margin-top:2px;padding-top:11px;border-top:1px solid #f4f4f5}
+.cu-admin-modal-footer button{height:32px;border-radius:6px;font-size:8px}
+.cu-admin-cancel{padding:0 14px;border:0;background:transparent}
+.cu-admin-submit{padding:0 15px;border:0;background:#4f46e5;color:#fff!important}
+.cu-admin-success{width:min(306px,100%);padding:18px 20px 17px}
+.cu-admin-success-content{text-align:center}
+.cu-admin-success-icon{width:76px;height:76px;margin:0 auto 10px}
+.cu-admin-success-icon svg{display:block;width:100%;height:100%}
+.cu-admin-success-content h2{margin:0;font-size:12px;font-weight:600;line-height:1.4}
+.cu-admin-success-message{margin:5px 0 12px;color:#71717a;font-size:7px;line-height:1.5}
+.cu-admin-success-details{margin:0;padding:5px 9px;border:1px solid #e4e4e7;border-radius:8px;background:#fafafa;text-align:left}
+.cu-admin-success-details div{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:21px;border-bottom:1px solid #e4e4e7}
+.cu-admin-success-details div:last-child{border-bottom:0}
+.cu-admin-success-details dt,.cu-admin-success-details dd{margin:0;font-size:7px;line-height:1.35}
+.cu-admin-success-details dt{color:#71717a;white-space:nowrap}
+.cu-admin-success-details dd{color:#18181b;font-weight:600;text-align:right;overflow-wrap:anywhere}
+.cu-admin-success-details .cu-admin-success-status{color:#16a34a}
+.cu-admin-success-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:11px;padding-top:10px;border-top:1px solid #f4f4f5}
+.cu-admin-success-footer button{height:28px;border-radius:6px;font-size:7px}
+.cu-admin-success-close{padding:0 14px;border:1px solid #e4e4e7;background:#fff}
+.cu-admin-success-back{padding:0 12px;border:0;background:#4f46e5;color:#fff!important}
+@media(max-width:420px){.cu-admin-modal{padding:14px}.cu-admin-form{column-gap:7px}}
 @media(max-width:1100px){.cu-stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:860px){
  .cu-app{grid-template-columns:1fr}

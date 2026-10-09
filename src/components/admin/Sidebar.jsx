@@ -44,7 +44,103 @@ function MenuLabel({ children }) {
   );
 }
 
-export default function Sidebar() {
+const SUPER_ADMIN_GROUPS = [
+  {
+    label: "Publishing",
+    items: [
+      ["Overview", DashboardIcon, "/"],
+      ["Schools", NewsIcon, "/schools"],
+      ["School Administrators", NoteIcon, "/school-administrators"],
+      ["Users", UserGroupIcon],
+      ["Content Monitoring", AnalyticsIcon],
+    ],
+  },
+  {
+    label: "Commercial",
+    items: [
+      ["External Events", UserGroupIcon],
+      ["Announcements", NoteIcon],
+    ],
+  },
+  {
+    label: "Government",
+    items: [
+      ["Audit log", UserGroupIcon],
+      ["Analytics", AnalyticsIcon],
+    ],
+  },
+];
+
+function SuperAdminSidebar({ activeItem }) {
+  const navigate = (href) => {
+    if (href) window.location.href = href;
+  };
+
+  return (
+    <aside className="cu-side">
+      <div className="cu-logo">
+        <span
+          className="cu-logo-mark"
+          aria-hidden="true"
+          style={{
+            maskImage: "url('/images/Group%201.svg')",
+            maskPosition: "center",
+            maskRepeat: "no-repeat",
+            maskSize: "contain",
+          }}
+        />
+        Campus Update
+      </div>
+      <div className="cu-pub">
+        <div className="cu-pub-in">
+          <UniversityIcon />
+          <div>
+            <small>Publishing as</small>
+            <b>Campus Update</b>
+          </div>
+        </div>
+      </div>
+      {SUPER_ADMIN_GROUPS.map((group) => (
+        <div key={group.label}>
+          <div className="cu-grp">{group.label}</div>
+          {group.items.map(([label, Icon, href]) => {
+            const active = label === activeItem;
+            return (
+              <button
+                key={label}
+                type="button"
+                className={`cu-nav${active ? " on" : ""}`}
+                aria-current={active ? "page" : undefined}
+                onClick={() => navigate(href)}
+              >
+                <Icon
+                  className="h-6 w-6"
+                  stroke={active ? "#4F46E5" : "#454545"}
+                />
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      ))}
+      <div style={{ flex: 1 }} />
+      <button type="button" className="cu-nav">
+        <SettingsIcon className="h-6 w-6" stroke="#454545" />
+        Settings
+      </button>
+      <button type="button" className="cu-nav cu-logout">
+        <LogoutIcon className="h-6 w-6" stroke="#dc2626" />
+        Logout
+      </button>
+    </aside>
+  );
+}
+
+export default function Sidebar({ activeItem }) {
+  if (activeItem) {
+    return <SuperAdminSidebar activeItem={activeItem} />;
+  }
+
   return (
     <aside className="flex w-[321px] shrink-0 flex-col justify-between rounded-[10px] bg-white/60 px-[26px] pb-[25px] pt-[29px]">
       <div className="flex flex-col gap-6">

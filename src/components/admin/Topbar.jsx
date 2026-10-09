@@ -1,6 +1,30 @@
 import { BellIcon, ChevronDown } from './Icons.jsx'
 
-export default function Topbar() {
+export default function Topbar({ title, subtitle }) {
+  if (title) {
+    return (
+      <header className="cu-top">
+        <div>
+          <h1>{title}</h1>
+          <p>{subtitle}</p>
+        </div>
+        <div style={{ flex: 1 }} />
+        <button type="button" className="cu-bell" aria-label="Notifications">
+          <BellIcon className="h-[26px] w-[26px]" stroke="#454545" />
+          <i />
+        </button>
+        <div className="cu-user">
+          <img className="cu-av" src="/images/avatar-john.png" alt="" />
+          <div>
+            <b>John Doe</b>
+            <small>Faculty Administrator</small>
+          </div>
+          <ChevronDown className="h-5 w-5" />
+        </div>
+      </header>
+    )
+  }
+
   return (
     <header className="flex items-center justify-between rounded-[10px] bg-white/60 px-[50px] py-3">
       <div className="flex flex-col gap-2.5">

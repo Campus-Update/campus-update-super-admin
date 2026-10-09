@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from "react";
+import Sidebar from "./components/admin/Sidebar.jsx";
+import Topbar from "./components/admin/Topbar.jsx";
 
 /* ---------- data (replace with your API) ---------- */
 const lead = {
@@ -11,10 +13,10 @@ const lead = {
   content: 41,
   initials: "LU",
 };
-const SCHOOLS = [
+export const SCHOOLS = [
   ...Array.from({ length: 21 }, (_, i) => ({ ...lead, id: i + 1 })),
   {
-    id: 8,
+    id: 22,
     initials: "UI",
     name: "University of Ibadan",
     place: "Ibadan, Oyo · Agreement signed",
@@ -23,7 +25,7 @@ const SCHOOLS = [
     content: 2,
   },
   {
-    id: 9,
+    id: 23,
     initials: "UL",
     name: "University of Lagos",
     place: "Akoka, Lagos · First meeting held",
@@ -32,7 +34,7 @@ const SCHOOLS = [
     content: 4,
   },
   {
-    id: 10,
+    id: 24,
     initials: "OU",
     name: "Obafemi Awolowo University",
     place: "Ile-Ife, Osun · Paused at school's request",
@@ -55,20 +57,6 @@ const CHIPS = [
   { key: "Prospect", label: "Prospect", n: "03", dot: "#d97706" },
   { key: "Deactivated", label: "Deactivated", n: "03", dot: "#d97706" },
 ];
-const NAV = [
-  {
-    group: "Publishing",
-    items: [
-      "Overview",
-      "Schools",
-      "School Administrators",
-      "Users",
-      "Content Monitoring",
-    ],
-  },
-  { group: "Commercial", items: ["External Events", "Announcements"] },
-  { group: "Government", items: ["Audit log", "Analytics"] },
-];
 const fmt = (n) => (n == null ? "--" : n.toLocaleString("en-US"));
 
 /* ---------- icons ---------- */
@@ -87,92 +75,39 @@ const Svg = ({ children, size = 22, sw = 1.6 }) => (
     {children}
   </svg>
 );
-const ICONS = {
-  Overview: (
-    <Svg>
-      <circle cx="7" cy="7" r="3.5" />
-      <circle cx="17" cy="7" r="3.5" />
-      <circle cx="7" cy="17" r="3.5" />
-      <circle cx="17" cy="17" r="3.5" />
-    </Svg>
-  ),
-  Schools: (
-    <Svg>
-      <rect x="3" y="4" width="18" height="16" rx="3" />
-      <path d="M8 9h8M8 13h8M8 17h4" />
-    </Svg>
-  ),
-  "School Administrators": (
-    <Svg>
-      <path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z" />
-      <path d="M12 3v18M4 12h16" />
-    </Svg>
-  ),
-  Users: (
-    <Svg>
-      <circle cx="9" cy="8" r="3.5" />
-      <path d="M2.5 20c0-4 3-6 6.5-6s6.5 2 6.5 6" />
-      <circle cx="17" cy="9" r="2.5" />
-      <path d="M17 14c3 0 5 1.5 5 5" />
-    </Svg>
-  ),
-  "Content Monitoring": (
-    <Svg>
-      <path d="M4 7h16l-1 12H5z" />
-      <circle cx="12" cy="13" r="3" />
-      <path d="M6 4h12" />
-    </Svg>
-  ),
-  "External Events": (
-    <Svg>
-      <circle cx="9" cy="8" r="3.5" />
-      <path d="M2.5 20c0-4 3-6 6.5-6s6.5 2 6.5 6" />
-      <path d="M18 4v6M15 7h6" />
-    </Svg>
-  ),
-  Announcements: (
-    <Svg>
-      <rect x="3" y="5" width="18" height="15" rx="3" />
-      <path d="M8 16v-4M12 16V9M16 16v-2" />
-    </Svg>
-  ),
-  "Audit log": (
-    <Svg>
-      <circle cx="9" cy="8" r="3.5" />
-      <path d="M2.5 20c0-4 3-6 6.5-6s6.5 2 6.5 6" />
-      <path d="M17 14l1.5 1.5L22 12" />
-    </Svg>
-  ),
-  Analytics: (
-    <Svg>
-      <rect x="3" y="5" width="18" height="15" rx="3" />
-      <path d="M8 16v-4M12 16V9M16 16v-2" />
-    </Svg>
-  ),
-  Settings: (
-    <Svg>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" />
-    </Svg>
-  ),
-  Logout: (
-    <Svg>
-      <path d="M10 4H6a2 2 0 00-2 2v12a2 2 0 002 2h4" />
-      <path d="M14 8l4 4-4 4M18 12H9" />
-    </Svg>
-  ),
-};
-
 /* ---------- page ---------- */
 export default function SchoolsPage() {
+  const [schools, setSchools] = useState(() => {
+    const savedIds = JSON.parse(
+      window.sessionStorage.getItem("campus-update-school-ids") || "[]",
+    );
+    const deletedIds = JSON.parse(
+      window.sessionStorage.getItem("campus-update-deleted-school-ids") || "[]",
+    );
+    const savedSchools = savedIds
+      .map((id) => {
+        const school = window.sessionStorage.getItem(
+          `campus-update-school-${id}`,
+        );
+        return school ? JSON.parse(school) : null;
+      })
+      .filter(Boolean);
+    const savedById = new Map(savedSchools.map((school) => [school.id, school]));
+    return [
+      ...savedSchools.filter((school) => !SCHOOLS.some((seed) => seed.id === school.id)),
+      ...SCHOOLS.map((school) => savedById.get(school.id) || school),
+    ].filter((school) => !deletedIds.includes(school.id));
+  });
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("All");
   const [sort, setSort] = useState({ key: null, dir: 1 });
   const [page, setPage] = useState(1);
   const [per, setPer] = useState(10);
+  const [isAddSchoolOpen, setIsAddSchoolOpen] = useState(false);
+  const [addedSchool, setAddedSchool] = useState(null);
 
   const rows = useMemo(() => {
-    let r = SCHOOLS.filter(
+    let r = schools.filter(
       (s) =>
         (status === "All" || s.status === status) &&
         `${s.name} ${s.place} ${s.status}`
@@ -186,7 +121,7 @@ export default function SchoolsPage() {
         return (x > y ? 1 : x < y ? -1 : 0) * sort.dir;
       });
     return r;
-  }, [q, status, sort]);
+  }, [q, schools, status, sort]);
 
   const pages = Math.max(1, Math.ceil(rows.length / per));
   const cur = Math.min(page, pages);
@@ -199,6 +134,57 @@ export default function SchoolsPage() {
   };
   const sortBy = (key) =>
     setSort((s) => ({ key, dir: s.key === key ? -s.dir : 1 }));
+  const closeAddSchool = () => {
+    setIsAddSchoolOpen(false);
+    setAddedSchool(null);
+  };
+  const addSchool = (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const name = formData.get("institutionName").trim();
+    const shortName = formData.get("shortName").trim();
+    const location = formData.get("location").trim();
+    const schoolStatus = formData.get("status");
+
+    const newSchool = {
+        id: Math.max(0, ...schools.map((school) => school.id)) + 1,
+        name,
+        initials: shortName.toUpperCase(),
+        place: `${location} · ${schoolStatus}`,
+        status: schoolStatus,
+        students: null,
+        staff: null,
+        admins: 0,
+        content: 0,
+        type: formData.get("type"),
+        contactEmail: formData.get("contactEmail").trim(),
+        shortName,
+        location,
+        contactPerson: formData.get("contactPerson").trim(),
+        phoneCountryCode: formData.get("phoneCountryCode"),
+        phoneNumber: formData.get("phoneNumber").trim(),
+        rolloutScope: formData.get("rolloutScope").trim(),
+        notes: formData.get("notes").trim(),
+        addedAt: new Date(),
+      };
+
+    window.sessionStorage.setItem(
+      `campus-update-school-${newSchool.id}`,
+      JSON.stringify(newSchool),
+    );
+    const savedIds = JSON.parse(
+      window.sessionStorage.getItem("campus-update-school-ids") || "[]",
+    );
+    window.sessionStorage.setItem(
+      "campus-update-school-ids",
+      JSON.stringify([...new Set([...savedIds, newSchool.id])]),
+    );
+    setSchools((currentSchools) => [newSchool, ...currentSchools]);
+    setQ("");
+    setStatus("All");
+    setPage(1);
+    setAddedSchool(newSchool);
+  };
   const Th = ({ label, k }) => (
     <th scope="col">
       <button type="button" onClick={() => sortBy(k)}>
@@ -212,84 +198,24 @@ export default function SchoolsPage() {
     <div className="cu-app">
       <style>{CSS}</style>
 
-      <aside className="cu-side">
-        <div className="cu-logo">
-          <span className="cu-logo-mark" aria-hidden="true" /> Campus Update
-        </div>
-        <div className="cu-pub">
-          <div className="cu-pub-in">
-            <Svg size={20} sw={1.4}>
-              <path d="M4 21V9l8-5 8 5v12M9 21v-6h6v6M3 21h18" />
-            </Svg>
-            <div>
-              <small>Publishing as</small>
-              <b>Campus Update</b>
-            </div>
-          </div>
-        </div>
-        {NAV.map((g) => (
-          <div key={g.group}>
-            <div className="cu-grp">{g.group}</div>
-            {g.items.map((n) => (
-              <button
-                key={n}
-                type="button"
-                className={"cu-nav" + (n === "Schools" ? " on" : "")}
-                aria-current={n === "Schools" ? "page" : undefined}
-                onClick={() => {
-                  const targets = {
-                    Overview: "/",
-                    Schools: "/schools",
-                    "School Administrators": "/school-administrators",
-                  };
-
-                  if (targets[n]) {
-                    window.location.href = targets[n];
-                  }
-                }}
-              >
-                {ICONS[n]} {n}
-              </button>
-            ))}
-          </div>
-        ))}
-        <div style={{ flex: 1 }} />
-        <button type="button" className="cu-nav">
-          {ICONS.Settings} Settings
-        </button>
-        <button type="button" className="cu-nav cu-logout">
-          {ICONS.Logout} Logout
-        </button>
-      </aside>
+      <Sidebar activeItem="Schools" />
 
       <main className="cu-main">
-        <header className="cu-top">
-          <div>
-            <h1>Schools</h1>
-            <p>Add, edit and activate institutions</p>
-          </div>
-          <div style={{ flex: 1 }} />
-          <button type="button" className="cu-bell" aria-label="Notifications">
-            <Svg size={26} sw={1.4}>
-              <path d="M6 17v-6a6 6 0 0112 0v6l2 2H4zM10 21h4" />
-            </Svg>
-            <i />
-          </button>
-          <div className="cu-user">
-            <img className="cu-av" src="/images/avatar-john.png" alt="" />
-            <div>
-              <b>John Doe</b>
-              <small>Faculty Administrator</small>
-            </div>
-            <Svg size={20} sw={1.8}>
-              <path d="M6 9l6 6 6-6" />
-            </Svg>
-          </div>
-        </header>
+        <Topbar
+          title="Schools"
+          subtitle="Add, edit and activate institutions"
+        />
 
         <section className="cu-body">
           <div className="cu-row-end">
-            <button type="button" className="cu-add">
+            <button
+              type="button"
+              className="cu-add"
+              onClick={() => {
+                setAddedSchool(null);
+                setIsAddSchoolOpen(true);
+              }}
+            >
               <Svg size={26} sw={1.4}>
                 <circle cx="12" cy="12" r="9.5" />
                 <path d="M12 8v8M8 12h8" />
@@ -384,7 +310,15 @@ export default function SchoolsPage() {
                         <div className="cu-inst">
                           <span className="cu-ini">{s.initials}</span>
                           <div>
-                            <b>{s.name}</b>
+                            <button
+                              type="button"
+                              className="cu-school-link"
+                              onClick={() => {
+                                window.location.href = `/schools/${s.id}`;
+                              }}
+                            >
+                              {s.name}
+                            </button>
                             <small>{s.place}</small>
                           </div>
                         </div>
@@ -474,6 +408,234 @@ export default function SchoolsPage() {
           </div>
         </section>
       </main>
+      {isAddSchoolOpen && (
+        <div
+          className="cu-modal-backdrop"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              closeAddSchool();
+            }
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              closeAddSchool();
+            }
+          }}
+        >
+          <section
+            className={`cu-modal${addedSchool ? " cu-modal-success" : ""}`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={addedSchool ? "cu-success-title" : "cu-add-school-title"}
+          >
+            {addedSchool ? (
+              <div className="cu-success-content">
+                <div className="cu-success-icon" aria-hidden="true">
+                  <svg viewBox="0 0 80 80" fill="none">
+                    <path
+                      d="M40 2c5 0 8 6 13 7s11-2 15 2 1 10 4 15 8 7 8 14-5 10-8 15 0 11-4 15-10 1-15 4-8 8-13 8-8-6-13-8-11 2-15-2-1-10-4-15S0 50 0 40s5-10 8-15 0-11 4-15 10-1 15-4 8-4 13-4Z"
+                      fill="#CCFFC8"
+                    />
+                    <path
+                      d="m23 41 10 10 24-26"
+                      stroke="#059669"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <h2 id="cu-success-title">School Added Successfully</h2>
+                <p className="cu-success-message">
+                  {addedSchool.name} has been successfully added to the system.
+                </p>
+                <dl className="cu-success-details">
+                  <div>
+                    <dt>Institution Name</dt>
+                    <dd>{addedSchool.name}</dd>
+                  </div>
+                  <div>
+                    <dt>Email</dt>
+                    <dd>{addedSchool.contactEmail}</dd>
+                  </div>
+                  <div>
+                    <dt>Short Name</dt>
+                    <dd>{addedSchool.shortName}</dd>
+                  </div>
+                  <div>
+                    <dt>Type</dt>
+                    <dd>{addedSchool.type}</dd>
+                  </div>
+                  <div>
+                    <dt>Location</dt>
+                    <dd>{addedSchool.location}</dd>
+                  </div>
+                  <div>
+                    <dt>Status</dt>
+                    <dd className="cu-success-status">{addedSchool.status}</dd>
+                  </div>
+                  <div>
+                    <dt>Added on</dt>
+                    <dd>
+                      {addedSchool.addedAt.toLocaleString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </dd>
+                  </div>
+                </dl>
+                <footer className="cu-success-footer">
+                  <button
+                    type="button"
+                    className="cu-success-close"
+                    onClick={closeAddSchool}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    className="cu-success-back"
+                    onClick={closeAddSchool}
+                  >
+                    Back to School Management
+                  </button>
+                </footer>
+              </div>
+            ) : (
+            <>
+              <header className="cu-modal-header">
+                <div>
+                  <h2 id="cu-add-school-title">Add a school</h2>
+                  <p>
+                    New schools start as Onboarding or Prospect and only serve
+                    content once activated.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="cu-modal-close"
+                  onClick={closeAddSchool}
+                  aria-label="Close add school form"
+                >
+                  <Svg size={18} sw={1.5}>
+                    <path d="m6 6 12 12M18 6 6 18" />
+                  </Svg>
+                </button>
+              </header>
+              <form className="cu-modal-form" onSubmit={addSchool}>
+              <label className="cu-field cu-field-full">
+                <span>
+                  Institution name <i>*</i>
+                </span>
+                <input
+                  name="institutionName"
+                  placeholder="e.g. Aisha"
+                  autoFocus
+                  required
+                />
+              </label>
+              <label className="cu-field">
+                <span>
+                  Short name <i>*</i>
+                </span>
+                <input name="shortName" placeholder="e.g CU" required />
+              </label>
+              <label className="cu-field">
+                <span>
+                  Type <i>*</i>
+                </span>
+                <select name="type" required defaultValue="Private university">
+                  <option>Private university</option>
+                  <option>Public university</option>
+                  <option>Polytechnic</option>
+                  <option>College of education</option>
+                  <option>Other</option>
+                </select>
+              </label>
+              <label className="cu-field">
+                <span>
+                  Contact email <i>*</i>
+                </span>
+                <input
+                  name="contactEmail"
+                  type="email"
+                  placeholder="Enter email"
+                  required
+                />
+              </label>
+              <label className="cu-field">
+                <span>
+                  Location <i>*</i>
+                </span>
+                <input
+                  name="location"
+                  placeholder="City, State"
+                  required
+                />
+              </label>
+              <label className="cu-field">
+                <span>Contact person</span>
+                <input name="contactPerson" />
+              </label>
+              <label className="cu-field">
+                <span>Phone number</span>
+                <div className="cu-phone">
+                  <select
+                    name="phoneCountryCode"
+                    aria-label="Phone country code"
+                    defaultValue="+234"
+                  >
+                    <option value="+234">🇳🇬 +234</option>
+                    <option value="+1">🇺🇸 +1</option>
+                    <option value="+44">🇬🇧 +44</option>
+                    <option value="+233">🇬🇭 +233</option>
+                  </select>
+                  <input
+                    name="phoneNumber"
+                    type="tel"
+                    placeholder="Enter phone number"
+                  />
+                </div>
+              </label>
+              <label className="cu-field cu-field-full">
+                <span>Status</span>
+                <select name="status" defaultValue="Onboarding">
+                  <option>Onboarding</option>
+                  <option>Prospect</option>
+                </select>
+              </label>
+              <label className="cu-field cu-field-full">
+                <span>Rollout scope</span>
+                <input name="rolloutScope" placeholder="e.g FOCIT" />
+              </label>
+              <label className="cu-field cu-field-full">
+                <span>Notes</span>
+                <input name="notes" placeholder="Internal notes" />
+              </label>
+              <footer className="cu-modal-footer">
+                <button
+                  type="button"
+                  className="cu-modal-cancel"
+                  onClick={closeAddSchool}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="cu-modal-submit">
+                  Add school
+                  <Svg size={16}>
+                    <path d="M5 12h14m-6-6 6 6-6 6" />
+                  </Svg>
+                </button>
+              </footer>
+              </form>
+            </>
+            )}
+          </section>
+        </div>
+      )}
     </div>
   );
 }
@@ -541,6 +703,8 @@ const CSS = `
 .cu-inst{display:flex;align-items:center;gap:12px}
 .cu-ini{width:44px;height:44px;border-radius:50%;background:var(--brand-soft);color:var(--navy);font-weight:600;font-size:14px;display:grid;place-items:center;flex:none}
 .cu-inst b{display:block;font-weight:600}
+.cu-school-link{display:block;padding:0;border:0;background:none;color:inherit;text-align:left;font-weight:600}
+.cu-school-link:hover{color:var(--brand)}
 .cu-inst small{color:var(--muted);font-size:14px}
 .cu-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:20px;background:var(--green-bg);color:var(--green);font-size:15px}
 .cu-pill i{width:7px;height:7px;border-radius:50%;background:currentColor}
@@ -553,6 +717,43 @@ const CSS = `
 .cu-pg button.on{background:var(--brand);border-color:var(--brand);color:#fff}
 .cu-pg button:disabled{opacity:.4;cursor:default}
 .cu-empty{text-align:center;padding:40px!important;color:var(--muted)}
+.cu-modal-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:rgba(24,24,27,.24);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.cu-modal{width:min(535px,100%);max-height:calc(100vh - 40px);overflow-y:auto;background:#fff;border-radius:12px;padding:18px;box-shadow:0 16px 48px rgba(24,24,27,.18);color:#27272a}
+.cu-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:12px}
+.cu-modal-header h2{margin:0 0 5px;font-size:14px;font-weight:600;line-height:1.4}
+.cu-modal-header p{margin:0;color:#52525b;font-size:9px;line-height:1.5}
+.cu-modal-close{display:grid;place-items:center;width:24px;height:24px;flex:none;padding:0;border:0;background:transparent;color:#52525b}
+.cu-modal-form{display:grid;grid-template-columns:1fr 1fr;column-gap:10px;row-gap:8px}
+.cu-field{display:flex;min-width:0;flex-direction:column;gap:4px}
+.cu-field-full{grid-column:1/-1}
+.cu-field>span{font-size:9px;line-height:1.3;color:#27272a}
+.cu-field>span i{color:#ef4444;font-style:normal}
+.cu-field input,.cu-field select{width:100%;height:35px;min-width:0;border:1px solid #d4d4d8;border-radius:7px;background:#fff;padding:0 14px;font-size:9px;color:#27272a}
+.cu-field input::placeholder{color:#52525b;opacity:1}
+.cu-field select{padding-right:8px;color:#52525b}
+.cu-phone{display:grid;grid-template-columns:68px minmax(0,1fr);gap:8px;min-width:0}
+.cu-phone select{padding:0 6px}
+.cu-phone input{padding:0 14px}
+.cu-modal-footer{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;margin-top:4px;padding:12px 0 0;border-top:1px solid #f4f4f5}
+.cu-modal-cancel{padding:0 14px;height:34px;border:0;background:transparent;font-size:9px}
+.cu-modal-submit{display:flex;align-items:center;justify-content:center;gap:8px;height:35px;padding:0 16px;border:0;border-radius:6px;background:#4f46e5;color:#fff!important;font-size:9px}
+.cu-modal-success{width:min(262px,100%);padding:18px 18px 17px}
+.cu-success-content{text-align:center}
+.cu-success-icon{width:64px;height:64px;margin:0 auto 10px}
+.cu-success-icon svg{display:block;width:100%;height:100%}
+.cu-success-content h2{margin:0;font-size:12px;font-weight:600;line-height:1.4}
+.cu-success-message{margin:4px 0 12px;color:#71717a;font-size:7px;line-height:1.5}
+.cu-success-details{margin:0;padding:4px 9px;border:1px solid #e4e4e7;border-radius:8px;background:#fafafa;text-align:left}
+.cu-success-details div{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:20px;border-bottom:1px solid #e4e4e7}
+.cu-success-details div:last-child{border-bottom:0}
+.cu-success-details dt,.cu-success-details dd{margin:0;font-size:7px;line-height:1.35}
+.cu-success-details dt{color:#71717a;white-space:nowrap}
+.cu-success-details dd{color:#18181b;font-weight:600;text-align:right;overflow-wrap:anywhere}
+.cu-success-details .cu-success-status{color:#16a34a}
+.cu-success-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+.cu-success-footer button{height:28px;border-radius:6px;font-size:7px}
+.cu-success-close{padding:0 14px;border:1px solid #e4e4e7;background:#fff}
+.cu-success-back{padding:0 12px;border:0;background:#4f46e5;color:#fff!important}
 @media(max-width:1100px){.cu-stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:860px){
  .cu-app{grid-template-columns:1fr}
@@ -627,5 +828,12 @@ const CSS = `
  .cu-user div,.cu-user svg{display:none}
  .cu-body{padding:12px}
  .cu-stats{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:520px){
+ .cu-modal-backdrop{padding:10px}
+ .cu-modal{max-height:calc(100vh - 20px);padding:16px}
+ .cu-modal-form{grid-template-columns:1fr}
+ .cu-field-full{grid-column:auto}
+ .cu-phone{grid-template-columns:90px minmax(0,1fr)}
 }
 `;
