@@ -28,21 +28,22 @@ const ROWS = [
 export default function SchoolAdminsPage({ onNavigate }) {
   const [menu, setMenu] = useState(null)
   const [modal, setModal] = useState(null)
+  const [navOpen, setNavOpen] = useState(false)
 
   return (
-    <div className="min-h-screen w-full bg-[#E9E9EA] p-[27px]">
-      <div className="flex gap-6">
-        <Sidebar active="admins" publishingAs="Campus Update" onNavigate={onNavigate} />
+    <div className="min-h-screen w-full bg-[#E9E9EA] p-3 md:p-[27px]">
+      <div className="flex gap-4 md:gap-6">
+        <Sidebar active="admins" publishingAs="Campus Update" onNavigate={onNavigate} open={navOpen} onClose={() => setNavOpen(false)} />
 
-        <main className="flex flex-1 flex-col gap-6">
-          <div className="flex items-start gap-6">
-            <div className="flex-1">
-              <Topbar title="School administrators" subtitle="Who can publish, and where" />
+        <main className="flex min-w-0 flex-1 flex-col gap-4 md:gap-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0 flex-1">
+              <Topbar title="School administrators" subtitle="Who can publish, and where" onMenu={() => setNavOpen(true)} />
             </div>
             <button
               type="button"
               onClick={() => setModal('add')}
-              className="flex h-[66px] shrink-0 items-center gap-3 rounded-[10px] bg-[#4F46E5] px-7 text-base font-semibold leading-[22px] text-white hover:bg-[#4338CA]"
+              className="flex h-[54px] w-full shrink-0 items-center justify-center gap-3 rounded-[10px] bg-[#4F46E5] px-7 text-base font-semibold leading-[22px] text-white hover:bg-[#4338CA] md:h-[66px] md:w-auto"
             >
               <PlusIcon className="h-5 w-5" stroke="#fff" />
               Add New Administrator
@@ -50,7 +51,7 @@ export default function SchoolAdminsPage({ onNavigate }) {
           </div>
 
           {/* Stats */}
-          <div className="flex gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4">
             {STATS.map((s) => (
               <StatCard key={s.title} {...s} />
             ))}
@@ -63,12 +64,12 @@ export default function SchoolAdminsPage({ onNavigate }) {
             </div>
 
             {/* Filter bar */}
-            <div className="flex items-center justify-between gap-4 px-4 pt-6">
-              <div className="flex w-full max-w-[640px] items-center gap-4">
+            <div className="flex flex-col gap-4 px-4 pt-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex w-full max-w-[640px] flex-wrap items-center gap-4">
                 <SearchInput placeholder="Search by name, email or institution" />
                 <FilterSelect value="All roles" options={['All roles', 'Institution administrator', 'Faculty administrator', 'Department administrator']} />
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 <FilterSelect value="All Institutions" options={['All Institutions', 'Lead City University', 'University of Ibadan', 'Obafemi Awolowo University']} />
                 <FilterSelect value="All Statuses" options={['All Statuses', 'Active', 'Deactivated']} />
                 <button type="button" className="text-sm font-medium leading-[15.2px] text-[#4F46E5]">
@@ -78,8 +79,8 @@ export default function SchoolAdminsPage({ onNavigate }) {
             </div>
 
             {/* Table */}
-            <div className="px-4 pt-6">
-              <table className="w-full table-fixed border-collapse">
+            <div className="overflow-x-auto px-4 pt-6">
+              <table className="w-full min-w-[1000px] table-fixed border-collapse">
                 <thead>
                   <tr className="h-10">
                     <TH sort className="w-[24%]">ADMINISTRATOR</TH>
