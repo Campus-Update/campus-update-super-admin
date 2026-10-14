@@ -1,4 +1,4 @@
-export const API_BASE = 'https://campus-update-api-staging.vercel.app'
+export const API_BASE = ''
 
 const AUTH_KEY = 'cu_auth'
 const PROFILE_KEY = 'cu_profile'
