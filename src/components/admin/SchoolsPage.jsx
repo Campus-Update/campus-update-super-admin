@@ -1,8 +1,38 @@
+  const addSchool = async (f) => {
+    setBusy(true)
+    setFormError('')
+    let apiId = null
+    try {
+      const slug = f.institutionName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+      const created = await schoolsApi.create({ name: f.institutionName, slug, state: f.location || 'Lagos', isActive: f.status === 'Live' })
+      apiId = created?.id || null
+    } catch (e) {
+      setFormError(e.message)
+      setBusy(false)
+      return
+    }
+    const school = {
+      id: Math.max(0, ...schools.map((s) => s.id)) + 1,
+      apiId,
+      name: f.institutionName, initials: (f.shortName || 'CU').toUpperCase(),
+      loc: `${f.location} · ${f.status}`, status: f.status,
+      students: null, staff: null, admins: 0, content: 0, ...f,
+      addedAt: new Date().toISOString(),
+    }
+    window.sessionStorage.setItem(`campus-update-school-${school.id}`, JSON.stringify(school))
+    window.sessionStorage.setItem('campus-update-school-ids', JSON.stringify([...new Set([...read('campus-update-school-ids', []), school.id])]))
+    setSchools((c) => [school, ...c])
+    setAdded(school)
+    setModal('success')
+    setBusy(false)
+  }
+
 import { useMemo, useState } from 'react'
 import Sidebar from './Sidebar.jsx'
 import Topbar from './Topbar.jsx'
 import { StatCard, AvatarChip, TH, FilterSelect, SearchInput, DotsMenu } from './ui.jsx'
 import { AddSchoolModal, SchoolSuccessModal } from './schoolsModals.jsx'
+import { schoolsApi } from '../../lib/api.js'
 import { PlusIcon } from './Icons.jsx'
 
 const STATS = [
@@ -67,6 +97,8 @@ export default function SchoolsPage({ onNavigate }) {
   const [modal, setModal] = useState(null)
   const [added, setAdded] = useState(null)
   const [navOpen, setNavOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [formError, setFormError] = useState('')
 
   const rows = useMemo(() => {
     let r = schools.filter((s) => (status === 'All' || status === 'Deactivated' ? s.status === status || (status === 'All' && true) : s.status === status) && (status === 'All' || s.status === status) && `${s.name} ${s.loc} ${s.status}`.toLowerCase().includes(q.toLowerCase()))
@@ -209,7 +241,7 @@ export default function SchoolsPage({ onNavigate }) {
         </main>
       </div>
 
-      {modal === 'add' && <AddSchoolModal onClose={() => setModal(null)} onSubmit={addSchool} />}
+      {modal === 'add' && <AddSchoolModal onClose={() => setModal(null)} onSubmit={addSchool} error={formError} busy={busy} />}
       {modal === 'success' && <SchoolSuccessModal school={added} onClose={() => setModal(null)} />}
     </div>
   )

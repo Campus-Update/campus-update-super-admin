@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { adminApi, schoolsApi } from '../../lib/api.js'
 import Sidebar from './Sidebar.jsx'
 import Topbar from './Topbar.jsx'
 import {
@@ -76,6 +77,22 @@ function CardHeader({ title, action }) {
 
 export default function OverviewPage({ onNavigate }) {
   const [navOpen, setNavOpen] = useState(false)
+  const [stats, setStats] = useState(STATS)
+
+  useEffect(() => {
+    Promise.all([schoolsApi.list(), adminApi.analytics(), adminApi.pending()])
+      .then(([schools, an, pend]) => {
+        const t = an?.totals || {}
+        const pad = (n) => String(n ?? 0).padStart(2, '0')
+        setStats([
+          { label: 'Live institutions', value: pad(schools?.length), sub: `${schools?.length ?? 0} on platform`, purple: true },
+          { label: 'Registered users', value: pad(t.totalRegisteredUsers), sub: `${t.activeUsers ?? 0} active users` },
+          { label: 'Weekly active', value: pad(t.dau), sub: 'Daily active users' },
+          { label: 'Awaiting your review', value: pad(pend?.totalCount), sub: 'Awaiting approval' },
+        ])
+      })
+      .catch(() => {})
+  }, [])
   return (
     <div className="flex min-h-screen gap-[15px] bg-[#F3F3F3] p-[5px] font-sans md:p-[15px]">
       <Sidebar open={navOpen} onClose={() => setNavOpen(false)} onNavigate={onNavigate} />
@@ -102,7 +119,7 @@ export default function OverviewPage({ onNavigate }) {
 
           {/* Stats */}
           <div className="grid grid-cols-1 gap-[21px] sm:grid-cols-2 xl:grid-cols-4">
-            {STATS.map((s) => (
+            {stats.map((s) => (
               <StatCard key={s.label} stat={s} />
             ))}
           </div>

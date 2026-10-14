@@ -1,32 +1,54 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Sidebar from './Sidebar.jsx'
 import Topbar from './Topbar.jsx'
-import { StatCard, PageCountFooter, TH, DotsMenu } from './ui.jsx'
-import { StatusPill } from './SchoolsPage.jsx'
+import { PageCountFooter, TH, DotsMenu } from './ui.jsx'
+import { contentApi } from '../../lib/api.js'
+import { timeAgo, StatusCell, UrgencyPill, menuItemsFor } from '../../lib/format.jsx'
 
-const STATS = [
-  { title: '', value: '07', sub: 'Submitted' },
-  { title: '', value: '07', sub: 'Across 2 institutions' },
-  { title: '', value: '07', sub: 'Across 2 institutions' },
-  { title: '', value: '06', sub: '4 drafts · 0 taken down' },
-  { title: '', value: '01', sub: 'Live right now' },
-  { title: '', value: '25,506', sub: '2 sent as push' },
-]
-
-const ROW = { title: 'CSC 304 exam venue moved…', meta: 'Examinations Office · 1 hour ago' }
-
-const SourcePill = () => (
+const SourcePill = ({ name }) => (
   <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[#E5E7EB] bg-white px-3 py-[5px] text-[13px] font-medium leading-4 text-[#4B5563]">
     <svg viewBox="0 0 12 12" className="h-3 w-3" stroke="#667085" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round">
       <path d="M6 1 2 2.5v3C2 8.5 3.7 10.4 6 11c2.3-.6 4-2.5 4-5.5v-3L6 1Z" />
     </svg>
-    Official
+    {name || 'External'}
   </span>
 )
 
 export default function ExternalEventsPage({ onNavigate }) {
   const [menu, setMenu] = useState(null)
   const [navOpen, setNavOpen] = useState(false)
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  const load = useCallback(() => {
+    setLoading(true)
+    setError('')
+    contentApi
+      .list({ type: 'Event', page: 1, pageSize: 20 })
+      .then((d) => setRows(Array.isArray(d) ? d : []))
+      .catch((e) => {
+        setRows([])
+        setError(e.message)
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    load()
+    window.addEventListener('cu-content-changed', load)
+    return () => window.removeEventListener('cu-content-changed', load)
+  }, [load])
+
+  const count = (s) => String(rows.filter((r) => r.status === s).length).padStart(2, '0')
+  const STATS = [
+    { value: String(rows.length).padStart(2, '0'), sub: 'Submitted' },
+    { value: count('Published'), sub: 'Live' },
+    { value: count('PendingApproval'), sub: 'Awaiting approval' },
+    { value: count('Draft'), sub: 'Drafts' },
+    { value: count('Rejected'), sub: 'Rejected' },
+    { value: count('Archived'), sub: 'Taken down' },
+  ]
 
   return (
     <div className="min-h-screen w-full bg-[#E9E9EA] p-3 md:p-[27px]">
@@ -57,45 +79,59 @@ export default function ExternalEventsPage({ onNavigate }) {
               </p>
             </div>
 
+            {error && (
+              <p className="rounded-lg bg-[#FEE4E2] px-4 py-3 text-sm leading-5 text-[#D92D20]">{error}</p>
+            )}
+
             <div className="overflow-x-auto pt-2">
               <table className="w-full min-w-[1000px] table-fixed border-collapse">
                 <thead>
                   <tr className="h-10">
-                    <TH sort className="w-[22%]">CONTENT</TH>
-                    <TH sort className="w-[15%]">TYPE</TH>
-                    <TH sort className="w-[10%]">SOURCE</TH>
-                    <TH sort className="w-[15%]">INSTITUTION</TH>
-                    <TH sort className="w-[14%]">AUDIENCE</TH>
-                    <TH sort className="w-[10%]">STATUS</TH>
-                    <TH sort className="w-[10%]">REACH · OPENED</TH>
-                    <TH className="w-[4%]">ACTION</TH>
+                    <TH sort className="w-[28%]">CONTENT</TH>
+                    <TH sort className="w-[14%]">URGENCY</TH>
+                    <TH sort className="w-[14%]">SOURCE</TH>
+                    <TH sort className="w-[14%]">STATUS</TH>
+                    <TH sort className="w-[16%]">PUBLISHED</TH>
+                    <TH className="w-[8%]">ACTION</TH>
                   </tr>
                 </thead>
                 <tbody>
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <tr key={i} className={`h-[58px] ${i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}>
-                      <td className="px-4 py-2.5">
-                        <div className="flex flex-col gap-1">
-                          <span className="truncate text-[15px] font-semibold leading-4 text-[#344054]">{ROW.title}</span>
-                          <span className="truncate text-[13px] leading-[14px] text-[#6B7280]">{ROW.meta}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-2.5 text-[13px] leading-[14px] text-[#344054]">Faculty administrator</td>
-                      <td className="px-4 py-2.5"><SourcePill /></td>
-                      <td className="px-4 py-2.5 text-[13px] leading-[14px] text-[#344054]">Lead City University</td>
-                      <td className="px-4 py-2.5 text-[13px] leading-[14px] text-[#6B7280]">Computer Science · 300L…</td>
-                      <td className="px-4 py-2.5"><StatusPill label="Active" /></td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-[13px] leading-[14px] text-[#6B7280]">147 · 93%</td>
-                      <td className="px-4 py-2.5">
-                        <DotsMenu open={menu === i} onToggle={() => setMenu(menu === i ? null : i)} items={[{ label: 'View Details', onClick: () => setMenu(null) }, { label: 'View log', onClick: () => setMenu(null) }]} />
-                      </td>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-10 text-center text-sm text-[#6B7280]">Loading events…</td>
                     </tr>
-                  ))}
+                  ) : rows.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-10 text-center text-sm text-[#6B7280]">No events found.</td>
+                    </tr>
+                  ) : (
+                    rows.map((r, i) => (
+                      <tr key={r.id} className={`h-[58px] ${i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}>
+                        <td className="px-4 py-2.5">
+                          <div className="flex flex-col gap-1">
+                            <span className="truncate text-[15px] font-semibold leading-4 text-[#344054]">{r.title}</span>
+                            <span className="truncate text-[13px] leading-[14px] text-[#6B7280]">{r.body}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5"><UrgencyPill urgency={r.urgency} type={r.type} /></td>
+                        <td className="px-4 py-2.5"><SourcePill name={r.sourceName} /></td>
+                        <td className="px-4 py-2.5"><StatusCell status={r.status} /></td>
+                        <td className="whitespace-nowrap px-4 py-2.5 text-[13px] leading-[14px] text-[#6B7280]">{timeAgo(r.publishedAt) || '—'}</td>
+                        <td className="px-4 py-2.5">
+                          <DotsMenu
+                            open={menu === i}
+                            onToggle={() => setMenu(menu === i ? null : i)}
+                            items={menuItemsFor(r, () => setMenu(null), (m) => setError(m))}
+                          />
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
 
-            <PageCountFooter />
+            <PageCountFooter left={`Showing ${rows.length} results`} />
           </div>
         </main>
       </div>

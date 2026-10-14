@@ -7,6 +7,8 @@ import SchoolAdminsPage from './components/admin/SchoolAdminsPage.jsx'
 import ContentMonitoringPage from './components/admin/ContentMonitoringPage.jsx'
 import ExternalEventsPage from './components/admin/ExternalEventsPage.jsx'
 import AdvertisementsPage from './components/admin/AdvertisementsPage.jsx'
+import LoginPage from './components/admin/LoginPage.jsx'
+import { getAuth } from './lib/api.js'
 
 const PAGES = ['users', 'schools', 'admins', 'content', 'events', 'ads']
 
@@ -19,12 +21,15 @@ const fromHash = () => {
 
 export default function App() {
   const [route, setRoute] = useState(fromHash)
+  const [authed, setAuthed] = useState(() => !!getAuth())
 
   useEffect(() => {
     const onHash = () => setRoute(fromHash())
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
+
+  if (!authed) return <LoginPage onLoggedIn={() => setAuthed(true)} />
 
   const navigate = (id) => {
     if (PAGES.includes(id) || id === 'overview') window.location.hash = `/${id}`

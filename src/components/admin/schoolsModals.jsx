@@ -9,7 +9,7 @@ const NGFlag = () => (
   </svg>
 )
 
-export function AddSchoolModal({ onClose, onSubmit }) {
+export function AddSchoolModal({ onClose, onSubmit, error = '', busy = false }) {
   return (
     <ModalShell width={966}>
       <div className="flex flex-col gap-6 p-8">
@@ -105,11 +105,15 @@ export function AddSchoolModal({ onClose, onSubmit }) {
             <input name="notes" className={inputCls} placeholder="Internal notes" />
           </Field>
 
+          {error && (
+            <p className="rounded-lg bg-[#FEE4E2] px-4 py-3 text-sm leading-5 text-[#D92D20]">{error}</p>
+          )}
+
           <div className="mt-1 flex items-center justify-between border-t border-[#F3F4F6] pt-6">
             <button type="button" onClick={onClose} className="px-2 py-2 text-sm font-medium leading-5 text-[#374151] hover:text-black">
               Cancel
             </button>
-            <button type="submit" className="flex h-12 items-center gap-2 rounded-lg bg-[#4F46E5] px-6 text-sm font-semibold leading-5 text-white hover:bg-[#4338CA]">
+            <button type="submit" disabled={busy} className="flex h-12 items-center gap-2 rounded-lg bg-[#4F46E5] px-6 text-sm font-semibold leading-5 text-white hover:bg-[#4338CA] disabled:opacity-60">
               Add school
               <svg viewBox="0 0 16 16" className="h-4 w-4" stroke="#fff" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M2 8h11M9 3.5 13.5 8 9 12.5" />

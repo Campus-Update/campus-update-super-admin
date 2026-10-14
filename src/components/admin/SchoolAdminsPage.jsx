@@ -3,6 +3,7 @@ import Sidebar from './Sidebar.jsx'
 import Topbar from './Topbar.jsx'
 import { StatCard, StatusBadge, AvatarChip, PageCountFooter, TH, FilterSelect, SearchInput, DotsMenu } from './ui.jsx'
 import { AdminFormModal, SuccessModal, DeactivateModal } from './modals.jsx'
+import { usersApi } from '../../lib/api.js'
 import { PlusIcon, ViewSmIcon, EditSmIcon, PowerOffIcon } from './Icons.jsx'
 
 const STATS = [
@@ -29,6 +30,21 @@ export default function SchoolAdminsPage({ onNavigate }) {
   const [menu, setMenu] = useState(null)
   const [modal, setModal] = useState(null)
   const [navOpen, setNavOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [formError, setFormError] = useState('')
+
+  const addAdmin = async (f) => {
+    setBusy(true)
+    setFormError('')
+    try {
+      await usersApi.createAdmin({ email: f.email, password: f.password, firstName: f.firstName, lastName: f.lastName, institutionId: f.institutionId })
+      setModal('success')
+    } catch (e) {
+      setFormError(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <div className="min-h-screen w-full bg-[#E9E9EA] p-3 md:p-[27px]">
@@ -134,7 +150,7 @@ export default function SchoolAdminsPage({ onNavigate }) {
         </main>
       </div>
 
-      {modal === 'add' && <AdminFormModal mode="add" onClose={() => setModal(null)} onSubmit={() => setModal('success')} />}
+      {modal === 'add' && <AdminFormModal mode="add" onClose={() => setModal(null)} onSubmit={addAdmin} error={formError} busy={busy} />}
       {modal === 'success' && <SuccessModal onClose={() => setModal(null)} />}
       {modal === 'edit' && <AdminFormModal mode="edit" onClose={() => setModal(null)} />}
       {modal === 'deactivate' && <DeactivateModal kind="admin" onClose={() => setModal(null)} />}
