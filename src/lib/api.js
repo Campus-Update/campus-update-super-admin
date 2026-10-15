@@ -95,6 +95,7 @@ export async function api(path, { method = 'GET', body, form, auth = true } = {}
 export const authApi = {
   login: (email, password) => api('/api/v1/auth/login', { method: 'POST', body: { email, password }, auth: false }),
   profile: () => api('/api/v1/auth/profile'),
+  updateProfile: (b) => api('/api/v1/auth/profile', { method: 'PUT', body: b }),
 }
 
 export const schoolsApi = {

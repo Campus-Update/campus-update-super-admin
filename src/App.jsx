@@ -8,9 +8,12 @@ import ContentMonitoringPage from './components/admin/ContentMonitoringPage.jsx'
 import ExternalEventsPage from './components/admin/ExternalEventsPage.jsx'
 import AdvertisementsPage from './components/admin/AdvertisementsPage.jsx'
 import LoginPage from './components/admin/LoginPage.jsx'
+import AuditLogPage from './components/admin/AuditLogPage.jsx'
+import AnalyticsPage from './components/admin/AnalyticsPage.jsx'
+import SettingsPage from './components/admin/SettingsPage.jsx'
 import { getAuth } from './lib/api.js'
 
-const PAGES = ['users', 'schools', 'admins', 'content', 'events', 'ads']
+const PAGES = ['users', 'schools', 'admins', 'content', 'events', 'ads', 'audit', 'analytics', 'settings']
 
 const fromHash = () => {
   const h = window.location.hash.replace(/^#\/?/, '')
@@ -42,5 +45,8 @@ export default function App() {
   if (route.page === 'content') return <ContentMonitoringPage onNavigate={navigate} />
   if (route.page === 'events') return <ExternalEventsPage onNavigate={navigate} />
   if (route.page === 'ads') return <AdvertisementsPage onNavigate={navigate} />
+  if (route.page === 'audit') return <AuditLogPage onNavigate={navigate} />
+  if (route.page === 'analytics') return <AnalyticsPage onNavigate={navigate} />
+  if (route.page === 'settings') return <SettingsPage onNavigate={navigate} />
   return <OverviewPage onNavigate={navigate} />
 }

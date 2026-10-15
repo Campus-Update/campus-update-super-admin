@@ -123,9 +123,12 @@ export default function Sidebar({
       <div className="flex flex-col gap-1.5">
         <button
           type="button"
-          className="flex h-[53px] w-full items-center gap-4 rounded-[10px] px-5 py-[10px] text-left text-base leading-6 text-[#454545] hover:bg-[#EDEDED]"
+          onClick={() => onNavigate?.('settings')}
+          className={`flex h-[53px] w-full items-center gap-4 rounded-[10px] px-5 py-[10px] text-left text-base leading-6 hover:bg-[#EDEDED] ${
+            active === 'settings' ? 'bg-[#EEEDFD] font-semibold text-[#4F46E5]' : 'text-[#454545]'
+          }`}
         >
-          <SettingsIcon className="h-6 w-6" stroke="#454545" />
+          <SettingsIcon className="h-6 w-6" stroke={active === 'settings' ? '#4F46E5' : '#454545'} />
           Settings
         </button>
         <button
