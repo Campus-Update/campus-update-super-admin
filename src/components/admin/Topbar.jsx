@@ -1,10 +1,15 @@
 import { BellIcon, ChevronDown } from './Icons.jsx'
+import { getProfile } from '../../lib/api.js'
 
 export default function Topbar({
   title = 'Overview',
   subtitle = 'Manage operations, users, and system configuration.',
   onMenu,
 }) {
+  const profile = getProfile()
+  const displayName = profile ? `${profile.firstName} ${profile.lastName}` : 'John Doe'
+  const displayRole =
+    profile?.role === 'SuperAdmin' ? 'Super Admin' : profile?.role || 'Faculty Administrator'
   return (
     <header className="flex items-center justify-between gap-3 rounded-[10px] bg-white/60 px-4 py-3 md:px-[50px]">
       <div className="flex min-w-0 items-center gap-3">
@@ -42,12 +47,12 @@ export default function Topbar({
         >
           <img
             src="/images/avatar-john.png"
-            alt="John Doe"
+            alt={displayName}
             className="h-9 w-9 rounded-full object-cover md:h-[42px] md:w-[42px]"
           />
           <span className="hidden flex-col gap-1 text-left sm:flex">
-            <span className="text-base font-semibold leading-[17px] text-[#2D2D2D]">John Doe</span>
-            <span className="text-[13px] leading-[14px] text-[#6B7280]">Faculty Administrator</span>
+            <span className="text-base font-semibold leading-[17px] text-[#2D2D2D]">{displayName}</span>
+            <span className="text-[13px] leading-[14px] text-[#6B7280]">{displayRole}</span>
           </span>
           <ChevronDown className="hidden h-5 w-5 md:block md:h-[27px] md:w-[27px]" />
         </button>
