@@ -1,9 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Sidebar from './Sidebar.jsx'
 import Topbar from './Topbar.jsx'
 import { StatCard, StatusBadge, AvatarChip, PageCountFooter, TH, FilterSelect, SearchInput, DotsMenu } from './ui.jsx'
 import { AdminFormModal, DeactivateModal, DeleteModal, InstitutionsModal, SuspendModal } from './modals.jsx'
 import { ViewSmIcon, AssignIcon, OctagonPauseIcon, PowerOffIcon } from './Icons.jsx'
+import { adminApi, usersApi } from '../../lib/api.js'
+import { timeAgo } from '../../lib/format.jsx'
+
+const ROLE_LABEL = { Student: 'Student', Staff: 'Staff', InstitutionAdmin: 'School admin', SuperAdmin: 'Platform admin' }
+const pad = (n) => String(n).padStart(2, '0')
 
 const STATS = [
   { title: 'Students', value: '07', sub: 'Across 2 institutions' },
@@ -43,6 +48,23 @@ export default function UsersPage({ onNavigate }) {
   const [menu, setMenu] = useState(null)
   const [modal, setModal] = useState(null)
   const [navOpen, setNavOpen] = useState(false)
+  const [users, setUsers] = useState([])
+  const load = () => adminApi.users({ pageSize: 200 }).then((d) => setUsers(d?.items || [])).catch(() => setUsers([]))
+  useEffect(() => { load() }, [])
+
+  const count = (f) => users.filter(f).length
+  const stats = [
+    { title: 'Students', value: pad(count((u) => u.role === 'Student')), sub: `Across ${new Set(users.filter((u) => u.role === 'Student').map((u) => u.institutionName)).size} institutions` },
+    { title: 'Staff', value: pad(count((u) => u.role === 'Staff')), sub: 'Can sign in and publish' },
+    { title: 'School administrators', value: pad(count((u) => u.role === 'InstitutionAdmin')), sub: `${pad(count((u) => u.role === 'InstitutionAdmin' && u.isActive))} active` },
+    { title: 'Platform administrators', value: pad(count((u) => u.role === 'SuperAdmin')), sub: 'Campus Update team' },
+  ]
+  const chips = [
+    { label: 'Total:', value: pad(users.length), dot: null },
+    { label: 'Active', value: pad(count((u) => u.isActive)), dot: '#109E75' },
+    { label: 'Deactivated', value: pad(count((u) => !u.isActive)), dot: '#D85A30' },
+    { label: 'Suspended', value: '00', dot: '#EAB308' },
+  ]
 
   return (
     <div className="min-h-screen w-full bg-[#E9E9EA] p-3 md:p-[27px]">
@@ -54,7 +76,7 @@ export default function UsersPage({ onNavigate }) {
 
           {/* Stats */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4">
-            {STATS.map((s) => (
+            {stats.map((s) => (
               <StatCard key={s.title} {...s} />
             ))}
           </div>
@@ -80,7 +102,7 @@ export default function UsersPage({ onNavigate }) {
 
             {/* Status chips */}
             <div className="flex flex-wrap gap-3 px-4 pt-6">
-              {CHIPS.map((c) => (
+              {chips.map((c) => (
                 <button
                   key={c.label}
                   type="button"
@@ -109,25 +131,25 @@ export default function UsersPage({ onNavigate }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {ROWS.map((r, i) => (
-                    <tr key={i} className={`h-[58px] ${i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}>
+                  {users.map((r, i) => (
+                    <tr key={r.id || i} className="h-[58px] bg-white">
                       <td className="whitespace-nowrap px-4 py-2.5">
                         <div className="flex items-center gap-4">
-                          <AvatarChip name={r.code} />
+                          <AvatarChip name={`${(r.firstName || '?')[0]}${(r.lastName || '')[0] || ''}`.toUpperCase()} />
                           <div className="flex flex-col gap-1">
-                            <span className="text-[15px] font-semibold leading-4 text-[#344054]">{r.name}</span>
+                            <span className="text-[15px] font-semibold leading-4 text-[#344054]">{`${r.firstName || ''} ${r.lastName || ''}`.trim() || r.email}</span>
                             <span className="text-[13px] leading-[14px] text-[#6B7280]">{r.email}</span>
                           </div>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-[13px] leading-[14px] text-[#344054]">{r.type}</td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-[13px] leading-[14px] text-[#344054]">{r.inst}</td>
-                      <td className="px-4 py-2.5 text-[13px] leading-[14px] text-[#344054]">{r.fac}</td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-[13px] leading-[14px] text-[#344054]">{r.level}</td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-[13px] leading-[14px] text-[#344054]">{ROLE_LABEL[r.role] || r.role}</td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-[13px] leading-[14px] text-[#344054]">{r.institutionName || '—'}</td>
+                      <td className="px-4 py-2.5 text-[13px] leading-[14px] text-[#344054]">—</td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-[13px] leading-[14px] text-[#344054]">—</td>
                       <td className="whitespace-nowrap px-4 py-2.5">
-                        <StatusBadge />
+                        <StatusBadge label={r.isActive ? 'Active' : 'Deactivated'} />
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-[13px] leading-[14px] text-[#344054]">{r.last}</td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-[13px] leading-[14px] text-[#344054]">{r.lastActiveAt ? timeAgo(r.lastActiveAt) : 'Not signed in yet'}</td>
                       <td className="whitespace-nowrap px-4 py-2.5">
                         <DotsMenu
                           open={menu === i}
@@ -136,17 +158,24 @@ export default function UsersPage({ onNavigate }) {
                             { label: 'View Details', icon: <ViewSmIcon />, onClick: () => setMenu(null) },
                             { label: 'Assign Institution', icon: <AssignIcon />, onClick: () => { setMenu(null); setModal('assign') } },
                             { label: 'Suspend account', icon: <OctagonPauseIcon />, onClick: () => { setMenu(null); setModal('suspend') } },
-                            { label: 'Deactivate account', icon: <PowerOffIcon />, onClick: () => { setMenu(null); setModal('deactivate') } },
+                            r.isActive
+                              ? { label: 'Deactivate account', icon: <PowerOffIcon />, onClick: () => { setMenu(null); usersApi.patch(r.id, { isActive: false }).then(load) } }
+                              : { label: 'Activate account', icon: <PowerOffIcon />, onClick: () => { setMenu(null); usersApi.patch(r.id, { isActive: true }).then(load) } },
                           ]}
                         />
                       </td>
                     </tr>
                   ))}
+                  {users.length === 0 && (
+                    <tr className="border-t border-[#EDEDF0]">
+                      <td colSpan={8} className="px-4 py-10 text-center text-sm leading-5 text-[#6B7280]">No users on the platform yet.</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
 
-            <PageCountFooter />
+            <PageCountFooter left={`Showing ${users.length ? `1-${users.length}` : 0} of ${users.length} results`} />
           </div>
 
           {/* Registration by department */}

@@ -1,11 +1,17 @@
+import { useEffect, useState } from 'react'
 import { ModalShell, Field, inputCls, selectCls, SelectWrap, CompactButtons } from './ui.jsx'
+import { schoolsApi } from '../../lib/api.js'
 import { WarningIcon, TrashIcon, SealCheckIcon, CloseIcon, OctagonPauseLg } from './Icons.jsx'
 
 const ROLES = ['Institution administrator', 'Faculty administrator', 'Department administrator']
 const INSTITUTIONS = ['Lead City University', 'University of Ibadan', 'University of Lagos', 'Obafemi Awolowo University']
 
-export function AdminFormModal({ mode = 'add', onClose, onSubmit }) {
+export function AdminFormModal({ mode = 'add', onClose, onSubmit, error = '', busy = false }) {
   const editing = mode === 'edit'
+  const [insts, setInsts] = useState([])
+  useEffect(() => {
+    schoolsApi.list().then((d) => setInsts(Array.isArray(d) ? d : [])).catch(() => {})
+  }, [])
   return (
     <ModalShell width={582}>
       <div className="flex flex-col gap-6 p-8">
@@ -23,18 +29,34 @@ export function AdminFormModal({ mode = 'add', onClose, onSubmit }) {
           </button>
         </div>
 
-        <form className="flex flex-col gap-5" onSubmit={(e) => { e.preventDefault(); onSubmit?.() }}>
+        <form className="flex flex-col gap-5" onSubmit={(e) => {
+          e.preventDefault()
+          const fd = new FormData(e.currentTarget)
+          onSubmit?.({
+            firstName: (fd.get('firstName') || '').trim(),
+            lastName: (fd.get('lastName') || '').trim(),
+            email: (fd.get('email') || '').trim(),
+            password: fd.get('password') || '',
+            institutionId: fd.get('institutionId') || '',
+            scope: (fd.get('scope') || '').trim(),
+          })
+        }}>
           <div className="flex flex-col gap-5 sm:flex-row">
             <Field label="Full name">
-              <input className={inputCls} defaultValue={editing ? 'Aisha' : ''} placeholder="e.g. Aisha" />
+              <input name="firstName" required className={inputCls} defaultValue={editing ? 'Aisha' : ''} placeholder="e.g. Aisha" />
             </Field>
             <Field label="Last Name">
-              <input className={inputCls} defaultValue={editing ? 'Bello' : ''} placeholder="e.g. Bello" />
+              <input name="lastName" required className={inputCls} defaultValue={editing ? 'Bello' : ''} placeholder="e.g. Bello" />
             </Field>
           </div>
           <Field label="Email Address">
-            <input className={inputCls} defaultValue={editing ? 'covenantuni@gmail.com' : ''} placeholder="Enter email address" />
+            <input name="email" type="email" required className={inputCls} defaultValue={editing ? 'covenantuni@gmail.com' : ''} placeholder="Enter email address" />
           </Field>
+          {!editing && (
+            <Field label="Password" hintTop hint="Minimum of 12 characters.">
+              <input name="password" type="password" required minLength={12} className={inputCls} placeholder="Create a password" />
+            </Field>
+          )}
           <div className="flex flex-col gap-5 sm:flex-row">
             <Field label="Role">
               <SelectWrap>
@@ -48,10 +70,10 @@ export function AdminFormModal({ mode = 'add', onClose, onSubmit }) {
             </Field>
             <Field label="Institution">
               <SelectWrap>
-                <select className={selectCls} defaultValue={editing ? INSTITUTIONS[0] : ''}>
+                <select name="institutionId" required className={selectCls} defaultValue={editing ? (insts[0]?.id || '') : ''}>
                   {!editing && <option value="" disabled>Select institution</option>}
-                  {INSTITUTIONS.map((r) => (
-                    <option key={r}>{r}</option>
+                  {(insts.length ? insts : INSTITUTIONS.map((n) => ({ id: n, name: n }))).map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </select>
               </SelectWrap>
@@ -63,8 +85,12 @@ export function AdminFormModal({ mode = 'add', onClose, onSubmit }) {
             hintTop
             hint="What this administrator is allowed to publish, and to whom."
           >
-            <input className={inputCls} defaultValue={editing ? 'FOCIT' : ''} placeholder="e.g FOCIT" />
+            <input name="scope" className={inputCls} defaultValue={editing ? 'FOCIT' : ''} placeholder="e.g FOCIT" />
           </Field>
+
+          {error && (
+            <p className="rounded-lg bg-[#FEE4E2] px-4 py-3 text-sm leading-5 text-[#D92D20]">{error}</p>
+          )}
 
           <div className="mt-1 flex items-center justify-between">
             <button
@@ -76,9 +102,10 @@ export function AdminFormModal({ mode = 'add', onClose, onSubmit }) {
             </button>
             <button
               type="submit"
-              className="h-11 rounded-lg bg-[#4F46E5] px-6 text-sm font-semibold leading-5 text-white hover:bg-[#4338CA]"
+              disabled={busy}
+              className="h-11 rounded-lg bg-[#4F46E5] px-6 text-sm font-semibold leading-5 text-white hover:bg-[#4338CA] disabled:opacity-60"
             >
-              {editing ? 'Save Changes' : 'Add administrator'}
+              {busy ? 'Saving…' : editing ? 'Save Changes' : 'Add administrator'}
             </button>
           </div>
         </form>
