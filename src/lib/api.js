@@ -131,6 +131,9 @@ export const adminApi = {
     return api(`/api/v1/admin/content/pending${s ? `?${s}` : ''}`)
   },
   analytics: () => api('/api/v1/admin/analytics'),
+  platformSettings: () => api('/api/v1/admin/platform-settings'),
+  savePlatformSettings: (b) => api('/api/v1/admin/platform-settings', { method: 'PUT', body: b }),
+  departments: () => api('/api/v1/departments'),
   audit: (params) => qsApi('/api/v1/admin/audit', params),
   schools: (params) => qsApi('/api/v1/admin/schools', params),
   users: (params) => qsApi('/api/v1/admin/users', params),

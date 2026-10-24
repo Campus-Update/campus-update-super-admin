@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Sidebar from './Sidebar.jsx'
 import Topbar from './Topbar.jsx'
-import { authApi, getProfile, setProfile } from '../../lib/api.js'
+import { adminApi, authApi, getProfile, setProfile } from '../../lib/api.js'
 import { timeAgo } from '../../lib/format.jsx'
 
 const inputCls =
@@ -96,8 +96,50 @@ function ProfileTab({ profile, onSaved }) {
 }
 
 function PlatformTab() {
-  const [hold, setHold] = useState(true)
+  // Live wiring: GET/PUT /admin/platform-settings (full-object PUT — contract style).
+  const [f, setF] = useState(null)
   const [saved, setSaved] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    adminApi
+      .platformSettings()
+      .then((s) => setF({
+        platformName: s.platformName || 'Campus Update',
+        supportEmail: s.supportEmail || '',
+        supportPhone: s.supportPhone || '',
+        listingFee: s.listingFee ?? 0,
+        invoiceDays: s.invoiceDays ?? 7,
+        holdEventsUntilPayment: !!s.holdEventsUntilPayment,
+        maintenanceMode: !!s.maintenanceMode,
+      }))
+      .catch((e) => setError(`Could not load platform settings: ${e.message}`))
+  }, [])
+  const set = (k) => (e) => setF((c) => ({ ...c, [k]: e.target.value }))
+  const save = () => {
+    setBusy(true); setError(''); setSaved(false)
+    adminApi
+      .savePlatformSettings({
+        platformName: f.platformName,
+        supportEmail: f.supportEmail || null,
+        supportPhone: f.supportPhone || null,
+        maintenanceMode: f.maintenanceMode,
+        listingFee: Number(f.listingFee) || 0,
+        invoiceDays: Number(f.invoiceDays) || 7,
+        holdEventsUntilPayment: !!f.holdEventsUntilPayment,
+      })
+      .then(() => { setSaved(true); setBusy(false) })
+      .catch((e) => { setError(`Save failed: ${e.message}`); setBusy(false) })
+  }
+  const hold = f?.holdEventsUntilPayment ?? true
+  const setHold = (v) => setF((c) => ({ ...c, holdEventsUntilPayment: v }))
+  if (!f) return (
+    <div className="flex flex-col gap-4">
+      {error
+        ? <p className="rounded-lg bg-[#FEE4E2] px-4 py-3 text-sm leading-5 text-[#D92D20]">{error}</p>
+        : <p className="text-sm text-[#6B7280]">Loading platform settings…</p>}
+    </div>
+  )
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -107,18 +149,18 @@ function PlatformTab() {
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field label="Institution Name"><input className={inputCls} defaultValue="LeadCity University" /></Field>
         <Field label="Industry"><input className={inputCls} defaultValue="Hospitality & Tourism" /></Field>
-        <Field label="Support Email"><input className={inputCls} defaultValue="support@campusupdate.example" /></Field>
-        <Field label="Support Phone Number"><input className={inputCls} defaultValue="+234 801 234 5678" /></Field>
+        <Field label="Support Email"><input className={inputCls} value={f.supportEmail} onChange={set('supportEmail')} placeholder="support@campusupdate.example" /></Field>
+        <Field label="Support Phone Number"><input className={inputCls} value={f.supportPhone} onChange={set('supportPhone')} placeholder="+234 801 234 5678" /></Field>
       </div>
 
       <h3 className="text-base font-semibold leading-[18px] text-[#111827]">External events and payments</h3>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field label="Standard listing fee (N)">
-          <input className={inputCls} defaultValue="85000" />
+          <input className={inputCls} value={f.listingFee} onChange={set('listingFee')} inputMode="numeric" />
           <span className="text-[13px] leading-4 text-[#9CA3AF]">Pre-filled when an event passes review. You can change it per event.</span>
         </Field>
         <Field label="Days to pay an invoice">
-          <input className={inputCls} defaultValue="07" />
+          <input className={inputCls} value={f.invoiceDays} onChange={set('invoiceDays')} inputMode="numeric" />
           <span className="text-[13px] leading-4 text-[#9CA3AF]">Unpaid requests are flagged after this.</span>
         </Field>
       </div>
@@ -131,11 +173,12 @@ function PlatformTab() {
         <Toggle on={hold} onChange={setHold} />
       </div>
 
-      {saved && <p className="rounded-lg bg-[#E6F6F0] px-4 py-3 text-sm leading-5 text-[#0F7B5F]">Platform preferences saved on this device.</p>}
+      {error && <p className="rounded-lg bg-[#FEE4E2] px-4 py-3 text-sm leading-5 text-[#D92D20]">{error}</p>}
+      {saved && <p className="rounded-lg bg-[#E6F6F0] px-4 py-3 text-sm leading-5 text-[#0F7B5F]">Platform settings saved.</p>}
 
       <div className="flex items-center justify-end gap-3 border-t border-[#F3F4F6] pt-6">
         <button type="button" className="h-11 rounded-lg border border-[#E5E7EB] bg-white px-7 text-sm font-medium leading-5 text-[#374151] hover:bg-[#F9FAFB]">Cancel</button>
-        <button type="button" onClick={() => setSaved(true)} className="h-11 rounded-lg bg-[#4F46E5] px-6 text-sm font-semibold leading-5 text-white hover:bg-[#4338CA]">Save Changes</button>
+        <button type="button" onClick={save} disabled={busy} className="h-11 rounded-lg bg-[#4F46E5] px-6 text-sm font-semibold leading-5 text-white hover:bg-[#4338CA] disabled:opacity-60">{busy ? 'Saving…' : 'Save Changes'}</button>
       </div>
     </div>
   )

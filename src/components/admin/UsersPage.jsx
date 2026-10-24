@@ -37,6 +37,18 @@ const DEPARTMENTS = [
   { name: 'Cyber Security', registered: '88', total: '144', rate: '61%' },
 ]
 
+// Real department names from GET /departments; registration counts have no endpoint yet (shown as —).
+const useDepartments = () => {
+  const [rows, setRows] = useState(DEPARTMENTS)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    adminApi.departments()
+      .then((d) => { if (Array.isArray(d) && d.length) setRows(d.map((x) => ({ name: x.name, registered: '—', total: '—', rate: '—' }))) })
+      .catch((e) => setError(`Could not load departments: ${e.message}`))
+  }, [])
+  return { rows, error }
+}
+
 const CHIPS = [
   { label: 'Total:', value: '24', dot: null },
   { label: 'Active', value: '21', dot: '#109E75' },
@@ -45,6 +57,7 @@ const CHIPS = [
 ]
 
 export default function UsersPage({ onNavigate }) {
+  const { rows: deptRows, error: departmentError } = useDepartments()
   const [menu, setMenu] = useState(null)
   const [modal, setModal] = useState(null)
   const [navOpen, setNavOpen] = useState(false)
@@ -186,6 +199,7 @@ export default function UsersPage({ onNavigate }) {
                 Lead City University · FOCIT
               </button>
             </div>
+            {departmentError && <p className="rounded-lg bg-[#FEE4E2] px-4 py-3 text-sm leading-5 text-[#D92D20]">{departmentError}</p>}
             <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] table-fixed border-collapse">
               <thead>
@@ -197,7 +211,7 @@ export default function UsersPage({ onNavigate }) {
                 </tr>
               </thead>
               <tbody>
-                {DEPARTMENTS.map((d, i) => (
+                {deptRows.map((d, i) => (
                   <tr key={d.name} className={`h-[58px] ${i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}>
                     <td className="px-4 py-2.5 text-sm font-medium leading-[15.2px] text-[#344054]">{d.name}</td>
                     <td className="px-4 py-2.5 text-sm leading-[15.2px] text-[#6B7280]">{d.registered}</td>
