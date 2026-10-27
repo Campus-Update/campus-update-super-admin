@@ -80,12 +80,21 @@ export default function OverviewPage({ onNavigate }) {
   const [stats, setStats] = useState(STATS)
 
   useEffect(() => {
+<<<<<<< HEAD
     Promise.all([schoolsApi.list(), adminApi.analytics(), adminApi.pending(), adminApi.institutionStats().catch(() => null)])
       .then(([schools, an, pend, ist]) => {
         const t = an?.totals || {}
         const pad = (n) => String(n ?? 0).padStart(2, '0')
         setStats([
           { label: 'Live institutions', value: pad(schools?.length), sub: ist ? `${ist.studentsReached ?? 0} students reached · ${ist.pendingVerificationInstitutions ?? 0} pending verification` : `${schools?.length ?? 0} on platform`, purple: true },
+=======
+    Promise.all([schoolsApi.list(), adminApi.analytics(), adminApi.pending()])
+      .then(([schools, an, pend]) => {
+        const t = an?.totals || {}
+        const pad = (n) => String(n ?? 0).padStart(2, '0')
+        setStats([
+          { label: 'Live institutions', value: pad(schools?.length), sub: `${schools?.length ?? 0} on platform`, purple: true },
+>>>>>>> 6772d6d69f00a4fe827095fa4826a3bcf97f2a32
           { label: 'Registered users', value: pad(t.totalRegisteredUsers), sub: `${t.activeUsers ?? 0} active users` },
           { label: 'Weekly active', value: pad(t.dau), sub: 'Daily active users' },
           { label: 'Awaiting your review', value: pad(pend?.totalCount), sub: 'Awaiting approval' },

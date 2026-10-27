@@ -37,6 +37,7 @@ const DEPARTMENTS = [
   { name: 'Cyber Security', registered: '88', total: '144', rate: '61%' },
 ]
 
+<<<<<<< HEAD
 // Real department names from GET /departments; registration counts have no endpoint yet (shown as —).
 const useDepartments = () => {
   const [rows, setRows] = useState(DEPARTMENTS)
@@ -48,6 +49,8 @@ const useDepartments = () => {
   return rows
 }
 
+=======
+>>>>>>> 6772d6d69f00a4fe827095fa4826a3bcf97f2a32
 const CHIPS = [
   { label: 'Total:', value: '24', dot: null },
   { label: 'Active', value: '21', dot: '#109E75' },
@@ -56,7 +59,10 @@ const CHIPS = [
 ]
 
 export default function UsersPage({ onNavigate }) {
+<<<<<<< HEAD
   const deptRows = useDepartments()
+=======
+>>>>>>> 6772d6d69f00a4fe827095fa4826a3bcf97f2a32
   const [menu, setMenu] = useState(null)
   const [modal, setModal] = useState(null)
   const [navOpen, setNavOpen] = useState(false)
@@ -209,7 +215,11 @@ export default function UsersPage({ onNavigate }) {
                 </tr>
               </thead>
               <tbody>
+<<<<<<< HEAD
                 {deptRows.map((d, i) => (
+=======
+                {DEPARTMENTS.map((d, i) => (
+>>>>>>> 6772d6d69f00a4fe827095fa4826a3bcf97f2a32
                   <tr key={d.name} className={`h-[58px] ${i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}>
                     <td className="px-4 py-2.5 text-sm font-medium leading-[15.2px] text-[#344054]">{d.name}</td>
                     <td className="px-4 py-2.5 text-sm leading-[15.2px] text-[#6B7280]">{d.registered}</td>
