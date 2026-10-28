@@ -35,21 +35,6 @@ import { AddSchoolModal, SchoolSuccessModal } from './schoolsModals.jsx'
 import { schoolsApi, adminApi } from '../../lib/api.js'
 import { PlusIcon } from './Icons.jsx'
 
-const STATS = [
-  { title: 'Institutions', value: '04', sub: 'On the platform' },
-  { title: 'Live', value: '01', sub: 'Serving content to students' },
-  { title: 'Onboarding / prospect', value: '02', sub: '1 onboarding · 1 prospect' },
-  { title: 'Deactivated', value: '03', sub: 'Content hidden' },
-]
-
-const CHIPS = [
-  { key: 'All', label: 'Total:', value: '24', dot: null },
-  { key: 'Live', label: 'Live', value: '21', dot: '#109E75' },
-  { key: 'Onboarding', label: 'Onboarding', value: '03', dot: '#D85A30' },
-  { key: 'Prospect', label: 'Prospect', value: '03', dot: '#D85A30' },
-  { key: 'Deactivated', label: 'Deactivated', value: '03', dot: '#D85A30' },
-]
-
 const LCU = { name: 'Lead City University', loc: 'Ibadan, Oyo · Pilot · FOCIT', status: 'Live', students: 5240, staff: 5240, admins: 5, content: 41, initials: 'LU' }
 export const SCHOOLS = [
   ...Array.from({ length: 7 }, (_, i) => ({ ...LCU, id: i + 1 })),
@@ -98,7 +83,7 @@ export default function SchoolsPage({ onNavigate }) {
     const saved = read('campus-update-school-ids', []).map((id) => read(`campus-update-school-${id}`, null)).filter(Boolean)
     const deleted = read('campus-update-deleted-school-ids', [])
     const byId = new Map(saved.map((s) => [s.id, s]))
-    return [...saved.filter((s) => !SCHOOLS.some((x) => x.id === s.id)), ...SCHOOLS.map((s) => byId.get(s.id) || s)].filter((s) => !deleted.includes(s.id))
+    return saved.filter((s) => !deleted.includes(s.id))
   })
   const [q, setQ] = useState('')
   useEffect(() => {

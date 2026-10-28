@@ -40,13 +40,12 @@ const DEPARTMENTS = [
 // Real department names from GET /departments; registration counts have no endpoint yet (shown as —).
 const useDepartments = () => {
   const [rows, setRows] = useState(DEPARTMENTS)
-  const [error, setError] = useState('')
   useEffect(() => {
     adminApi.departments()
       .then((d) => { if (Array.isArray(d) && d.length) setRows(d.map((x) => ({ name: x.name, registered: '—', total: '—', rate: '—' }))) })
-      .catch((e) => setError(`Could not load departments: ${e.message}`))
+      .catch(() => {})
   }, [])
-  return { rows, error }
+  return rows
 }
 
 const CHIPS = [
@@ -57,7 +56,7 @@ const CHIPS = [
 ]
 
 export default function UsersPage({ onNavigate }) {
-  const { rows: deptRows, error: departmentError } = useDepartments()
+  const deptRows = useDepartments()
   const [menu, setMenu] = useState(null)
   const [modal, setModal] = useState(null)
   const [navOpen, setNavOpen] = useState(false)
@@ -199,7 +198,6 @@ export default function UsersPage({ onNavigate }) {
                 Lead City University · FOCIT
               </button>
             </div>
-            {departmentError && <p className="rounded-lg bg-[#FEE4E2] px-4 py-3 text-sm leading-5 text-[#D92D20]">{departmentError}</p>}
             <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] table-fixed border-collapse">
               <thead>

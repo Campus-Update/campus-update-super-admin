@@ -107,6 +107,8 @@ export const authApi = {
   updateProfile: (b) => api('/api/v1/auth/profile', { method: 'PUT', body: b }),
   changePassword: (b) => api('/api/v1/auth/change-password', { method: 'POST', body: b }),
   sessions: () => api('/api/v1/auth/sessions'),
+  notificationPreferences: () => api('/api/v1/auth/notification-preferences'),
+  saveNotificationPreferences: (b) => api('/api/v1/auth/notification-preferences', { method: 'PUT', body: b }),
   revokeSession: (id) => api(`/api/v1/auth/sessions/${id}`, { method: 'DELETE' }),
   revokeOtherSessions: () => api('/api/v1/auth/sessions/others', { method: 'DELETE' }),
 }
@@ -131,6 +133,7 @@ export const adminApi = {
     return api(`/api/v1/admin/content/pending${s ? `?${s}` : ''}`)
   },
   analytics: () => api('/api/v1/admin/analytics'),
+  institutionStats: () => api('/api/v1/institution/stats'),
   platformSettings: () => api('/api/v1/admin/platform-settings'),
   savePlatformSettings: (b) => api('/api/v1/admin/platform-settings', { method: 'PUT', body: b }),
   departments: () => api('/api/v1/departments'),

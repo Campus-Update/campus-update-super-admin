@@ -192,10 +192,44 @@ const NOTIF_ROWS = [
   { id: 'device', title: 'Sign-in from a new device', sub: 'Email is always sent.', on: true },
 ]
 
+const CADENCE = [
+  { label: 'Immediately', api: 'Immediate' },
+  { label: 'Daily at 7am', api: 'Daily' },
+  { label: 'Weekly on Monday', api: 'Weekly' },
+  { label: 'Off', api: 'Off' },
+]
+
 function NotificationsTab() {
+  // Live wiring: GET/PUT /auth/notification-preferences (email master flag, push flag, summary cadence).
   const [rows, setRows] = useState(NOTIF_ROWS)
   const [push, setPush] = useState(true)
+  const [cadence, setCadence] = useState('Immediately')
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  useEffect(() => {
+    authApi
+      .notificationPreferences()
+      .then((p) => {
+        const emailOn = !!p?.emailNotificationsEnabled
+        setRows((rs) => rs.map((r) => ({ ...r, on: emailOn ? r.on : false })))
+        setPush(!!p?.pushNotificationsEnabled)
+        const hit = CADENCE.find((c) => c.api === p?.summaryCadence)
+        setCadence(hit ? hit.label : 'Immediately')
+      })
+      .catch((e) => setError(`Could not load preferences: ${e.message}`))
+  }, [])
+  const save = () => {
+    setBusy(true); setError(''); setSaved(false)
+    authApi
+      .saveNotificationPreferences({
+        emailNotificationsEnabled: rows.some((r) => r.on),
+        pushNotificationsEnabled: push,
+        summaryCadence: (CADENCE.find((c) => c.label === cadence) || CADENCE[0]).api,
+      })
+      .then(() => { setSaved(true); setBusy(false) })
+      .catch((e) => { setError(`Save failed: ${e.message}`); setBusy(false) })
+  }
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -226,18 +260,20 @@ function NotificationsTab() {
       </div>
 
       <Field label="Summary email">
-        <select className={inputCls} defaultValue="Daily at 7am">
-          {['Daily at 7am', 'Weekly on Monday', 'Off'].map((o) => (
-            <option key={o}>{o}</option>
+        <select className={inputCls} value={cadence} onChange={(e) => setCadence(e.target.value)}>
+          {CADENCE.map((o) => (
+            <option key={o.label}>{o.label}</option>
           ))}
         </select>
         <span className="text-[13px] leading-4 text-[#9CA3AF]">Platform activity and items waiting on you</span>
       </Field>
 
-      {saved && <p className="rounded-lg bg-[#E6F6F0] px-4 py-3 text-sm leading-5 text-[#0F7B5F]">Preferences saved on this device.</p>}
+      <p className="text-[13px] leading-4 text-[#9CA3AF]">Per-type email choices are kept on this device; the platform stores one master email on/off, the push flag and the summary cadence.</p>
+      {error && <p className="rounded-lg bg-[#FEE4E2] px-4 py-3 text-sm leading-5 text-[#D92D20]">{error}</p>}
+      {saved && <p className="rounded-lg bg-[#E6F6F0] px-4 py-3 text-sm leading-5 text-[#0F7B5F]">Preferences saved.</p>}
 
       <div className="flex justify-end">
-        <button type="button" onClick={() => setSaved(true)} className="h-11 rounded-lg bg-[#4F46E5] px-6 text-sm font-semibold leading-5 text-white hover:bg-[#4338CA]">Save Preferences</button>
+        <button type="button" onClick={save} disabled={busy} className="h-11 rounded-lg bg-[#4F46E5] px-6 text-sm font-semibold leading-5 text-white hover:bg-[#4338CA] disabled:opacity-60">{busy ? 'Saving…' : 'Save Preferences'}</button>
       </div>
     </div>
   )

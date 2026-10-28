@@ -77,8 +77,8 @@ export default function AnalyticsPage({ onNavigate }) {
   const delivery = t.notifications ? Math.round(((t.notifications - (t.pushFailures || 0)) / t.notifications) * 1000) / 10 : 0
 
   const CARDS = [
-    { title: 'Total students', value: '5,319', sub: '+20% · vs Last month', color: '#109E75' },
-    { title: 'Total staff', value: '08', sub: '-10% · vs Last month', color: '#D92D20' },
+    { title: 'Total students', value: instRows.reduce((a, r) => a + (r.students || 0), 0).toLocaleString(), sub: 'Sum across institutions', color: '#109E75' },
+    { title: 'Total staff', value: String(instRows.reduce((a, r) => a + (r.staff || 0), 0)), sub: 'Sum across institutions', color: '#109E75' },
     { title: 'Total users', value: String(t.totalRegisteredUsers ?? 0).replace(/\B(?=(\d{3})+(?!\d))/g, ','), sub: '-10% · vs Last month', color: '#D92D20' },
     { title: 'Active users', value: String(t.activeUsers ?? 0), sub: '+70% · Active this week', color: '#109E75' },
     { title: 'Institutions', value: String(instCount), sub: 'vs Last month', color: '#109E75' },
