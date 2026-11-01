@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Sidebar from './Sidebar.jsx'
 import Topbar from './Topbar.jsx'
 import { PageCountFooter, TH, FilterSelect, SearchInput } from './ui.jsx'
-import { api } from '../../lib/api.js'
+import { adminApi } from '../../lib/api.js'
 import { timeAgo } from '../../lib/format.jsx'
 
 const DEMO = [
@@ -15,6 +15,26 @@ const DEMO = [
   { at: '2026-09-23T21:10:00Z', who: 'Campus Update — Jeremiah A.', role: 'School administrator', action: 'Granted publishing rights', tag: 'Advertisement', resource: 'Guaranteed 40% monthly returns · guarant…', inst: 'Lead City University' },
   { at: '2026-09-18T21:10:00Z', who: 'Campus Update — Jeremiah A.', role: 'Platform administrator', action: 'Deactivated school', tag: 'School', resource: 'Obafemi Awolowo University · paused at th…', inst: 'Obafemi Awolowo University' },
 ]
+
+const ROLE_LABEL = { SuperAdmin: 'Platform administrator', InstitutionAdmin: 'School administrator', Staff: 'Staff', Student: 'Student' }
+const prettify = (s = '') => s.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase())
+const tagLabel = (t = '') => (t === 'ExternalEvent' ? 'External event' : t || 'Access')
+const resourceOf = (it) => {
+  try {
+    const o = JSON.parse(it.details)
+    if (o && typeof o === 'object') return Object.entries(o).slice(0, 2).map(([k, v]) => `${k}: ${v}`).join(' · ')
+  } catch { /* not json */ }
+  return it.details || it.targetType || '—'
+}
+const mapAudit = (it) => ({
+  at: it.createdAt,
+  who: it.actorName || it.actorEmail || 'Unknown',
+  role: ROLE_LABEL[it.actorRole] || it.actorRole || '—',
+  action: prettify(it.action),
+  tag: tagLabel(it.actionTag),
+  resource: resourceOf(it),
+  inst: it.institutionName || 'Platform',
+})
 
 const Tag = ({ t }) => (
   <span className="inline-flex items-center whitespace-nowrap rounded-full border border-[#E5E7EB] bg-white px-3 py-[5px] text-[13px] font-medium leading-4 text-[#4B5563]">
@@ -29,12 +49,12 @@ export default function AuditLogPage({ onNavigate }) {
   const [q, setQ] = useState('')
 
   useEffect(() => {
-    api('/api/v1/admin/audit')
+    adminApi
+      .audit({ pageSize: 200 })
       .then((d) => {
         const items = Array.isArray(d) ? d : d?.items || []
-        if (items.length) setSample(false)
-        setRows(items.length ? items : DEMO)
-        if (!items.length) setSample(true)
+        setRows(items.length ? items.map(mapAudit) : [])
+        setSample(false)
       })
       .catch(() => {
         setRows(DEMO)
@@ -131,7 +151,7 @@ export default function AuditLogPage({ onNavigate }) {
                   ))}
                   {shown.length === 0 && (
                     <tr className="border-t border-[#EDEDF0]">
-                      <td colSpan={5} className="px-4 py-10 text-center text-sm leading-5 text-[#6B7280]">No audit entries match the current filters.</td>
+                      <td colSpan={5} className="px-4 py-10 text-center text-sm leading-5 text-[#6B7280]">{q ? 'No audit entries match the current filters.' : 'No audit entries yet.'}</td>
                     </tr>
                   )}
                 </tbody>

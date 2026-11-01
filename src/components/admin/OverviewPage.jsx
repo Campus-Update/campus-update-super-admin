@@ -80,14 +80,16 @@ export default function OverviewPage({ onNavigate }) {
   const [stats, setStats] = useState(STATS)
 
   useEffect(() => {
-    Promise.all([schoolsApi.list(), adminApi.analytics(), adminApi.pending()])
-      .then(([schools, an, pend]) => {
+    Promise.all([schoolsApi.list(), adminApi.analytics(), adminApi.pending(), adminApi.institutionStats().catch(() => null)])
+      .then(async ([schools, an, pend, ist]) => {
         const t = an?.totals || {}
         const pad = (n) => String(n ?? 0).padStart(2, '0')
+        const weekly = await Promise.all((schools || []).map((sc) => adminApi.weeklyActiveStudents(sc.id).catch(() => null)))
+        const weeklyTotal = weekly.reduce((a, r) => a + (r?.activeStudentCount ?? 0), 0)
         setStats([
-          { label: 'Live institutions', value: pad(schools?.length), sub: `${schools?.length ?? 0} on platform`, purple: true },
+          { label: 'Live institutions', value: pad(schools?.length), sub: ist ? `${ist.studentsReached ?? 0} students reached · ${ist.pendingVerificationInstitutions ?? 0} pending verification` : `${schools?.length ?? 0} on platform`, purple: true },
           { label: 'Registered users', value: pad(t.totalRegisteredUsers), sub: `${t.activeUsers ?? 0} active users` },
-          { label: 'Weekly active', value: pad(t.dau), sub: 'Daily active users' },
+          { label: 'Weekly active', value: pad(weeklyTotal), sub: 'Students active this week' },
           { label: 'Awaiting your review', value: pad(pend?.totalCount), sub: 'Awaiting approval' },
         ])
       })
@@ -140,7 +142,7 @@ export default function OverviewPage({ onNavigate }) {
             <section className="flex h-fit flex-col gap-2.5 rounded-lg bg-white px-5 py-[25px]">
               <h3 className="text-lg font-medium leading-[26px] text-black">Quick Actions</h3>
               {QUICK_ACTIONS.map((a) => (
-                <button key={a.title} type="button" className="flex items-center justify-between">
+                <button key={a.title} type="button" onClick={() => onNavigate?.(a.page)} className="flex items-center justify-between w-full">
                   <span className="flex items-center gap-[9px] text-left">
                     <span
                       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg p-2.5"

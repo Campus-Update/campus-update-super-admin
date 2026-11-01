@@ -92,10 +92,26 @@ export async function api(path, { method = 'GET', body, form, auth = true } = {}
   return data
 }
 
+const qsApi = (base, params = {}) => {
+  const q = new URLSearchParams()
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') q.set(k, v)
+  })
+  const s = q.toString()
+  return api(`${base}${s ? `?${s}` : ''}`)
+}
+
 export const authApi = {
   login: (email, password) => api('/api/v1/auth/login', { method: 'POST', body: { email, password }, auth: false }),
   profile: () => api('/api/v1/auth/profile'),
   updateProfile: (b) => api('/api/v1/auth/profile', { method: 'PUT', body: b }),
+  uploadPhoto: (body) => api('/api/v1/auth/profile/photo', { method: 'POST', body }),
+  changePassword: (b) => api('/api/v1/auth/change-password', { method: 'POST', body: b }),
+  sessions: () => api('/api/v1/auth/sessions'),
+  notificationPreferences: () => api('/api/v1/auth/notification-preferences'),
+  saveNotificationPreferences: (b) => api('/api/v1/auth/notification-preferences', { method: 'PUT', body: b }),
+  revokeSession: (id) => api(`/api/v1/auth/sessions/${id}`, { method: 'DELETE' }),
+  revokeOtherSessions: () => api('/api/v1/auth/sessions/others', { method: 'DELETE' }),
 }
 
 export const schoolsApi = {
@@ -118,6 +134,14 @@ export const adminApi = {
     return api(`/api/v1/admin/content/pending${s ? `?${s}` : ''}`)
   },
   analytics: () => api('/api/v1/admin/analytics'),
+  institutionStats: () => api('/api/v1/institution/stats'),
+  weeklyActiveStudents: (institutionId) => api(`/api/v1/institution/stats/weekly-active-students?institutionId=${institutionId}`),
+  platformSettings: () => api('/api/v1/admin/platform-settings'),
+  savePlatformSettings: (b) => api('/api/v1/admin/platform-settings', { method: 'PUT', body: b }),
+  departments: () => api('/api/v1/departments'),
+  audit: (params) => qsApi('/api/v1/admin/audit', params),
+  schools: (params) => qsApi('/api/v1/admin/schools', params),
+  users: (params) => qsApi('/api/v1/admin/users', params),
 }
 
 export const contentApi = {

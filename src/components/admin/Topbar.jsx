@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { BellIcon, ChevronDown } from './Icons.jsx'
-import { getProfile } from '../../lib/api.js'
+import { clearAuth, getProfile } from '../../lib/api.js'
 
 export default function Topbar({
   title = 'Overview',
   subtitle = 'Manage operations, users, and system configuration.',
   onMenu,
 }) {
+  const [menuOpen, setMenuOpen] = useState(false)
   const profile = getProfile()
   const displayName = profile ? `${profile.firstName} ${profile.lastName}` : 'John Doe'
   const displayRole =
@@ -35,18 +37,19 @@ export default function Topbar({
         <button
           type="button"
           aria-label="Notifications"
+          onClick={() => { sessionStorage.setItem('cu-settings-tab', 'Notifications'); window.location.hash = '#/settings'; }}
           className="relative flex h-11 w-11 items-center justify-center rounded-full bg-white md:h-[54px] md:w-[54px]"
         >
           <BellIcon className="h-6 w-6" />
           <span className="absolute right-[7px] top-[7px] h-2.5 w-2.5 rounded-full bg-[#D85A30]" />
         </button>
 
-        <button
+        <div className="relative"><button
           type="button"
           className="flex items-center gap-3 rounded-full border border-[#E5E7EB] bg-white py-1.5 pl-1.5 pr-2 md:py-[13px] md:pl-[26px] md:pr-4"
-        >
+         onClick={() => setMenuOpen((o) => !o)}>
           <img
-            src="/images/avatar-john.png"
+            src={getProfile()?.profileImageUrl || '/images/avatar-john.png'}
             alt={displayName}
             className="h-9 w-9 rounded-full object-cover md:h-[42px] md:w-[42px]"
           />
@@ -56,6 +59,13 @@ export default function Topbar({
           </span>
           <ChevronDown className="hidden h-5 w-5 md:block md:h-[27px] md:w-[27px]" />
         </button>
+        {menuOpen && (
+          <div className="absolute right-0 z-40 mt-2 flex w-56 flex-col gap-1 rounded-[10px] border border-[#E5E7EB] bg-white p-2 shadow-lg">
+            <button type="button" className="rounded-lg px-3 py-2 text-left text-sm text-[#344054] hover:bg-[#F9FAFB]" onClick={() => { setMenuOpen(false); window.location.hash = '#/settings'; }}>Profile settings</button>
+            <button type="button" className="rounded-lg px-3 py-2 text-left text-sm text-[#D92D20] hover:bg-[#FEE4E2]" onClick={() => { clearAuth(); window.location.hash = '#/'; window.location.reload(); }}>Log out</button>
+          </div>
+        )}
+        </div>
       </div>
     </header>
   )

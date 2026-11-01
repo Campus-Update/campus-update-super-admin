@@ -39,15 +39,24 @@ export default function AnalyticsPage({ onNavigate }) {
       })
       const days = [...new Set(counters.map((c) => c.day))].sort().slice(-8)
       if (days.length) setWeeks(days.map((day) => counters.filter((c) => c.day === day).reduce((s, c) => s + (c.registrations || 0), 0) || 1))
-      schoolsApi.list().then((schools) => {
-        setInstCount(schools?.length || 0)
+      adminApi.schools({ pageSize: 100 }).then((d) => {
+        const items = d?.items || []
+        setInstCount(d?.totalCount ?? items.length)
         setInstRows(
-          (schools || []).map((s) => {
+          items.map((s) => {
             const u = per[s.id] || { sessions: 0, registrations: 0, fetches: 0 }
-            return { name: s.name, status: 'Live', students: u.registrations, staff: u.fetches, weekly: u.sessions, live: u.fetches, views: u.sessions }
+            return {
+              name: s.name,
+              status: s.isActive ? 'Live' : 'Paused',
+              students: s.studentCount ?? u.registrations,
+              staff: s.staffCount ?? 0,
+              weekly: s.weeklyActiveCount ?? u.sessions,
+              live: s.liveContentCount ?? 0,
+              views: s.viewCount ?? 0,
+            }
           }),
         )
-      })
+      }).catch(() => {})
     }).catch(() => {})
     contentApi.list({ pageSize: 100 }).then((rows) => {
       const list = Array.isArray(rows) ? rows : []
@@ -68,8 +77,8 @@ export default function AnalyticsPage({ onNavigate }) {
   const delivery = t.notifications ? Math.round(((t.notifications - (t.pushFailures || 0)) / t.notifications) * 1000) / 10 : 0
 
   const CARDS = [
-    { title: 'Total students', value: '5,319', sub: '+20% · vs Last month', color: '#109E75' },
-    { title: 'Total staff', value: '08', sub: '-10% · vs Last month', color: '#D92D20' },
+    { title: 'Total students', value: instRows.reduce((a, r) => a + (r.students || 0), 0).toLocaleString(), sub: 'Sum across institutions', color: '#109E75' },
+    { title: 'Total staff', value: String(instRows.reduce((a, r) => a + (r.staff || 0), 0)), sub: 'Sum across institutions', color: '#109E75' },
     { title: 'Total users', value: String(t.totalRegisteredUsers ?? 0).replace(/\B(?=(\d{3})+(?!\d))/g, ','), sub: '-10% · vs Last month', color: '#D92D20' },
     { title: 'Active users', value: String(t.activeUsers ?? 0), sub: '+70% · Active this week', color: '#109E75' },
     { title: 'Institutions', value: String(instCount), sub: 'vs Last month', color: '#109E75' },

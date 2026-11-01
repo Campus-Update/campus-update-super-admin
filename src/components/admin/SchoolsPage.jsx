@@ -27,28 +27,13 @@
     setBusy(false)
   }
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Sidebar from './Sidebar.jsx'
 import Topbar from './Topbar.jsx'
 import { StatCard, AvatarChip, TH, FilterSelect, SearchInput, DotsMenu } from './ui.jsx'
 import { AddSchoolModal, SchoolSuccessModal } from './schoolsModals.jsx'
-import { schoolsApi } from '../../lib/api.js'
+import { schoolsApi, adminApi } from '../../lib/api.js'
 import { PlusIcon } from './Icons.jsx'
-
-const STATS = [
-  { title: 'Institutions', value: '04', sub: 'On the platform' },
-  { title: 'Live', value: '01', sub: 'Serving content to students' },
-  { title: 'Onboarding / prospect', value: '02', sub: '1 onboarding · 1 prospect' },
-  { title: 'Deactivated', value: '03', sub: 'Content hidden' },
-]
-
-const CHIPS = [
-  { key: 'All', label: 'Total:', value: '24', dot: null },
-  { key: 'Live', label: 'Live', value: '21', dot: '#109E75' },
-  { key: 'Onboarding', label: 'Onboarding', value: '03', dot: '#D85A30' },
-  { key: 'Prospect', label: 'Prospect', value: '03', dot: '#D85A30' },
-  { key: 'Deactivated', label: 'Deactivated', value: '03', dot: '#D85A30' },
-]
 
 const LCU = { name: 'Lead City University', loc: 'Ibadan, Oyo · Pilot · FOCIT', status: 'Live', students: 5240, staff: 5240, admins: 5, content: 41, initials: 'LU' }
 export const SCHOOLS = [
@@ -60,6 +45,18 @@ export const SCHOOLS = [
 ]
 
 const fmt = (n) => (n == null ? '--' : n.toLocaleString('en-US'))
+
+export const mapSchool = (s) => ({
+  id: s.id,
+  initials: s.acronym || s.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(),
+  name: s.name,
+  loc: s.state ? `${s.state}, Nigeria` : '—',
+  status: s.isActive ? 'Live' : 'Paused',
+  students: s.studentCount,
+  staff: s.staffCount,
+  admins: s.adminCount,
+  content: s.liveContentCount,
+})
 
 const read = (k, d) => {
   try { return JSON.parse(window.sessionStorage.getItem(k)) ?? d } catch { return d }
@@ -86,9 +83,18 @@ export default function SchoolsPage({ onNavigate }) {
     const saved = read('campus-update-school-ids', []).map((id) => read(`campus-update-school-${id}`, null)).filter(Boolean)
     const deleted = read('campus-update-deleted-school-ids', [])
     const byId = new Map(saved.map((s) => [s.id, s]))
-    return [...saved.filter((s) => !SCHOOLS.some((x) => x.id === s.id)), ...SCHOOLS.map((s) => byId.get(s.id) || s)].filter((s) => !deleted.includes(s.id))
+    return saved.filter((s) => !deleted.includes(s.id))
   })
   const [q, setQ] = useState('')
+  useEffect(() => {
+    adminApi.schools({ pageSize: 100 }).then((d) => {
+      const items = d?.items || []
+      if (items.length) setSchools((prev) => {
+        const saved = prev.filter((x) => typeof x.id === 'string' || items.some((it) => String(it.id) === String(x.id)))
+        return [...items.map(mapSchool), ...saved.filter((x) => !items.some((it) => String(it.id) === String(x.id)))]
+      })
+    }).catch(() => {})
+  }, [])
   const [status, setStatus] = useState('All')
   const [sort, setSort] = useState({ key: null, dir: 1 })
   const [page, setPage] = useState(1)
@@ -110,6 +116,22 @@ export default function SchoolsPage({ onNavigate }) {
   const cur = Math.min(page, pages)
   const shown = rows.slice((cur - 1) * per, cur * per)
   const sortBy = (key) => setSort((s) => ({ key, dir: s.key === key ? -s.dir : 1 }))
+
+  const pad2 = (n) => String(n).padStart(2, '0')
+  const byStatus = (st) => schools.filter((x) => x.status === st).length
+  const stats = [
+    { title: 'Institutions', value: pad2(schools.length), sub: 'On the platform' },
+    { title: 'Live', value: pad2(byStatus('Live')), sub: 'Serving content to students' },
+    { title: 'Onboarding / prospect', value: pad2(byStatus('Onboarding') + byStatus('Prospect')), sub: `${byStatus('Onboarding')} onboarding · ${byStatus('Prospect')} prospect` },
+    { title: 'Deactivated', value: pad2(byStatus('Paused') + byStatus('Deactivated')), sub: 'Content hidden' },
+  ]
+  const chips = [
+    { key: 'All', label: 'Total:', value: schools.length, dot: null },
+    { key: 'Live', label: 'Live', value: byStatus('Live'), dot: '#109E75' },
+    { key: 'Onboarding', label: 'Onboarding', value: byStatus('Onboarding'), dot: '#D85A30' },
+    { key: 'Prospect', label: 'Prospect', value: byStatus('Prospect'), dot: '#D85A30' },
+    { key: 'Deactivated', label: 'Deactivated', value: byStatus('Paused') + byStatus('Deactivated'), dot: '#D85A30' },
+  ]
 
   const addSchool = (f) => {
     const school = {
@@ -142,7 +164,7 @@ export default function SchoolsPage({ onNavigate }) {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4">
-            {STATS.map((s) => <StatCard key={s.title} {...s} />)}
+            {stats.map((s) => <StatCard key={s.title} {...s} />)}
           </div>
 
           <div className="flex flex-col overflow-hidden rounded-[10px] border border-[#DBDBDB] bg-white">
@@ -157,7 +179,7 @@ export default function SchoolsPage({ onNavigate }) {
             </div>
 
             <div className="flex flex-wrap gap-3 px-4 pt-6">
-              {CHIPS.map((c) => (
+              {chips.map((c) => (
                 <button key={c.key} type="button" onClick={() => { setStatus(c.key === 'All' ? 'All' : c.key); setPage(1) }}
                   className={`flex h-11 items-center gap-2 rounded-lg border px-5 text-sm leading-[15.2px] text-[#344054] ${status === c.key || (c.key === 'All' && status === 'All') ? 'border-[#4F46E5]' : 'border-[#E5E7EB] bg-white'}`}>
                   {c.dot && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: c.dot }} />}

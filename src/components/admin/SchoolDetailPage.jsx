@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Sidebar from './Sidebar.jsx'
 import Topbar from './Topbar.jsx'
 import { PageCountFooter, TH } from './ui.jsx'
-import { StatusPill, SCHOOLS } from './SchoolsPage.jsx'
+import { StatusPill, SCHOOLS, mapSchool } from './SchoolsPage.jsx'
+import { adminApi } from '../../lib/api.js'
 import { EditSmIcon, PowerOffIcon, TrashIcon } from './Icons.jsx'
 
 const read = (k, d) => {
@@ -38,7 +39,14 @@ const AUDIT = [
 export default function SchoolDetailPage({ schoolId, onNavigate }) {
   const [navOpen, setNavOpen] = useState(false)
   const saved = read(`campus-update-school-${schoolId}`, null)
-  const school = saved || SCHOOLS.find((s) => s.id === Number(schoolId)) || { name: 'Covenant University', initials: 'CU', status: 'Onboarding' }
+  const [live, setLive] = useState(null)
+  useEffect(() => {
+    adminApi.schools({ pageSize: 100 }).then((d) => {
+      const f = (d?.items || []).find((s) => String(s.id) === String(schoolId))
+      if (f) setLive(mapSchool(f))
+    }).catch(() => {})
+  }, [schoolId])
+  const school = saved || live || SCHOOLS.find((s) => s.id === Number(schoolId)) || { name: 'Covenant University', initials: 'CU', status: 'Onboarding' }
 
   const btn = 'flex h-11 items-center gap-2 rounded-[10px] border border-[#E5E7EB] bg-white px-5 text-sm font-semibold leading-5 text-[#374151] hover:bg-[#F9FAFB]'
 
