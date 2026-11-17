@@ -24,6 +24,7 @@ const SourcePill = ({ name }) => (
 export default function ContentMonitoringPage({ onNavigate }) {
   const [tab, setTab] = useState('all')
   const [q, setQ] = useState('')
+  const [statusFilter, setStatusFilter] = useState('All Statuses')
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -67,6 +68,7 @@ export default function ContentMonitoringPage({ onNavigate }) {
   }, [load])
 
   const live = rows.filter((r) => r.status === 'Published').length
+  const shown = statusFilter === 'All Statuses' ? rows : rows.filter((r) => r.status === statusFilter)
   const drafts = rows.filter((r) => r.status === 'Draft').length
   const down = rows.filter((r) => r.status === 'Archived').length
 
@@ -111,7 +113,7 @@ export default function ContentMonitoringPage({ onNavigate }) {
               <div className="flex flex-wrap items-center gap-4">
                 <SearchInput placeholder="Search contents, author or audience.." value={q} onChange={(e) => setQ(e.target.value)} />
                 <FilterSelect value="All Institutions" options={['All Institutions']} />
-                <FilterSelect value="All Statuses" options={['All Statuses']} />
+                <FilterSelect value={statusFilter} onChange={setStatusFilter} options={['All Statuses', 'Published', 'PendingApproval', 'Draft', 'Rejected', 'Archived']} />
               </div>
               <button type="button" className="text-sm font-medium leading-[15.2px] text-[#4F46E5]" onClick={() => { setQ(''); setTab('all') }}>
                 Clear filters
@@ -140,12 +142,12 @@ export default function ContentMonitoringPage({ onNavigate }) {
                     <tr>
                       <td colSpan={7} className="px-4 py-10 text-center text-sm text-[#6B7280]">Loading content…</td>
                     </tr>
-                  ) : rows.length === 0 ? (
+                  ) : shown.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-4 py-10 text-center text-sm text-[#6B7280]">No content found.</td>
                     </tr>
                   ) : (
-                    rows.map((r, i) => (
+                    shown.map((r, i) => (
                       <tr key={r.id} className={`h-[58px] ${i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}>
                         <td className="px-4 py-2.5">
                           <div className="flex flex-col gap-1">

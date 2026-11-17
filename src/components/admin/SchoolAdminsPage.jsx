@@ -14,20 +14,8 @@ const STATS = [
   { title: 'Schools without an admin', value: '03', sub: 'Live or onboarding' },
 ]
 
-const ROWS = [
-  { code: 'LU', name: 'Dr. O. Eboreime', email: 'o.eboreime@leadcity.example', role: 'Faculty administrator', inst: 'LCU', scope: 'FOCIT · news, events, announcements', last: '59 min ago' },
-  { code: 'UI', name: 'M. Athar', email: 'm.athar@leadcity.example', role: 'Department administrator', inst: 'LCU', scope: 'Computer Science · announcements only', last: '1 hour ago' },
-  { code: 'UL', name: "Registrar's Office", email: 'registrar@leadcity.example', role: 'Institution administrator', inst: 'UI', scope: 'Full publishing rights, institution-wide', last: '2 hours ago' },
-  { code: 'OU', name: 'Examinations Office', email: 'exams@leadcity.example', role: 'Department administrator', inst: 'UI', scope: 'FOCIT · announcements and calendar', last: '1 hour ago' },
-  { code: 'OU', name: 'Dr. B. Akinola', email: 'b.akinola@ui.example', role: 'Institution administrator', inst: 'OAU', scope: 'Full publishing rights, institution-wide', last: 'Not signed in yet' },
-  { code: 'OU', name: 'Prof. K. Adeyemi', email: 'k.adeyemi@oau.example', role: 'Institution administrator', inst: 'OAU', scope: 'Full publishing rights, institution-wide', last: '12 days ago' },
-  { code: 'OU', name: 'T. Ojo', email: 't.ojo@oau.example', role: 'Institution administrator', inst: 'OAU', scope: 'Technology · news and announcements', last: '8 hours ago' },
-  { code: 'OU', name: 'T. Ojo', email: 't.ojo@oau.example', role: 'Faculty administrator', inst: 'OAU', scope: 'Technology · news and announcements', last: '8 hours ago' },
-  { code: 'OU', name: 'T. Ojo', email: 't.ojo@oau.example', role: 'Institution administrator', inst: 'OAU', scope: 'Full publishing rights, institution-wide', last: '8 hours ago' },
-  { code: 'OU', name: 'T. Ojo', email: 't.ojo@oau.example', role: 'Institution administrator', inst: 'OAU', scope: 'Full publishing rights, institution-wide', last: '8 hours ago' },
-]
 
-const ROLE_LABEL = { InstitutionAdmin: 'Institution administrator', SuperAdmin: 'Platform administrator' }
+const ROLE_LABEL = { LeadSchoolAdmin: 'Institution administrator', NewsAdmin: 'News administrator', CalendarAdmin: 'Calendar administrator', SchoolAdmin: 'Institution administrator', InstitutionAdmin: 'Institution administrator', SuperAdmin: 'Platform administrator' }
 const pad = (n) => String(n).padStart(2, '0')
 
 export default function SchoolAdminsPage({ onNavigate }) {
@@ -37,6 +25,7 @@ export default function SchoolAdminsPage({ onNavigate }) {
   const [busy, setBusy] = useState(false)
   const [formError, setFormError] = useState('')
   const [admins, setAdmins] = useState([])
+  const [roleFilter, setRoleFilter] = useState('All roles')
   const [noAdminSchools, setNoAdminSchools] = useState(0)
   const load = () => {
     adminApi.users({ pageSize: 200 }).then((d) => setAdmins((d?.items || []).filter((u) => !['Student', 'Staff', 'SuperAdmin'].includes(u.role)))).catch(() => setAdmins([]))
@@ -45,6 +34,7 @@ export default function SchoolAdminsPage({ onNavigate }) {
   useEffect(() => { load() }, [])
 
   const active = admins.filter((a) => a.isActive).length
+  const visible = roleFilter === 'All roles' ? admins : admins.filter((r) => (ROLE_LABEL[r.role] || r.role) === roleFilter)
   const stats = [
     { title: 'School administrators', value: pad(admins.length), sub: 'On the platform' },
     { title: 'Active', value: pad(active), sub: 'Can sign in and publish' },
@@ -103,7 +93,7 @@ export default function SchoolAdminsPage({ onNavigate }) {
             <div className="flex flex-col gap-4 px-4 pt-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex w-full max-w-[640px] flex-wrap items-center gap-4">
                 <SearchInput placeholder="Search by name, email or institution" />
-                <FilterSelect value="All roles" options={['All roles', 'Institution administrator', 'Faculty administrator', 'Department administrator']} />
+                <FilterSelect value={roleFilter} onChange={setRoleFilter} options={['All roles', 'Institution administrator', 'Faculty administrator', 'Department administrator']} />
               </div>
               <div className="flex flex-wrap items-center gap-4">
                 <FilterSelect value="All Institutions" options={['All Institutions', 'Lead City University', 'University of Ibadan', 'Obafemi Awolowo University']} />
@@ -129,7 +119,7 @@ export default function SchoolAdminsPage({ onNavigate }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {admins.map((r, i) => (
+                  {visible.map((r, i) => (
                     <tr key={r.id || i} className="h-[58px] bg-white">
                       <td className="whitespace-nowrap px-4 py-2.5">
                         <div className="flex items-center gap-4">
@@ -161,7 +151,7 @@ export default function SchoolAdminsPage({ onNavigate }) {
                       </td>
                     </tr>
                   ))}
-                  {admins.length === 0 && (
+                  {visible.length === 0 && (
                     <tr className="border-t border-[#EDEDF0]">
                       <td colSpan={7} className="px-4 py-10 text-center text-sm leading-5 text-[#6B7280]">No school administrators yet. Use Add administrator to create one.</td>
                     </tr>

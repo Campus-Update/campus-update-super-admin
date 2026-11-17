@@ -99,13 +99,13 @@ export const TH = ({ children, sort = false, className = '', onSort }) => (
   </th>
 )
 
-export function FilterSelect({ value, options }) {
+export function FilterSelect({ value, options, onChange }) {
   return (
     <div className="relative shrink-0">
       <select
         className="h-[42px] w-[180px] cursor-pointer appearance-none rounded-lg bg-[#F3F4F6] px-4 pr-9 text-[13px] font-medium leading-[17px] text-[#4B5563] outline-none"
         value={value}
-        onChange={() => {}}
+        onChange={(e) => onChange && onChange(e.target.value)}
         aria-label={value}
       >
         {options.map((o) => (

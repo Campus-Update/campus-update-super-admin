@@ -1,11 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Sidebar from './Sidebar.jsx'
 import Topbar from './Topbar.jsx'
-<<<<<<< HEAD
 import { adminApi, authApi, getProfile, setProfile } from '../../lib/api.js'
-=======
-import { authApi, getProfile, setProfile } from '../../lib/api.js'
->>>>>>> 6772d6d69f00a4fe827095fa4826a3bcf97f2a32
 import { timeAgo } from '../../lib/format.jsx'
 
 const inputCls =
@@ -35,6 +31,16 @@ function ProfileTab({ profile, onSaved }) {
   const [last, setLast] = useState(profile?.lastName || '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const photoRef = useRef(null)
+  const pickPhoto = (e) => {
+    const img = e.target.files?.[0]
+    if (!img) return
+    const form = new FormData()
+    form.append('file', img)
+    authApi.uploadPhoto(form)
+      .then((updated) => { setProfile(updated); onSaved && onSaved() })
+      .catch(() => setError('Photo upload failed.'))
+  }
 
   const save = async () => {
     setBusy(true)
@@ -59,7 +65,10 @@ function ProfileTab({ profile, onSaved }) {
 
       <div className="flex items-center gap-5">
         <span className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-[#E5E7EB]">
-          <img src="/images/avatar-john.png" alt="Profile" className="h-full w-full object-cover" />
+          <button type="button" aria-label="Change profile photo" onClick={() => photoRef.current?.click()} className="h-full w-full">
+            <img src={profile?.profileImageUrl || '/images/avatar-john.png'} alt="Profile" className="h-full w-full object-cover" />
+          </button>
+          <input ref={photoRef} type="file" accept="image/png, image/jpeg" hidden onChange={pickPhoto} />
           <span className="absolute bottom-0 flex h-7 w-full items-center justify-center bg-black/50">
             <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" stroke="#fff" strokeWidth="1.3" fill="none" strokeLinejoin="round"><path d="M2 5h3l1-1.5h4L11 5h3v8H2V5Zm6 5.5A2.5 2.5 0 1 0 8 5.5a2.5 2.5 0 0 0 0 5Z" /></svg>
           </span>
@@ -100,7 +109,6 @@ function ProfileTab({ profile, onSaved }) {
 }
 
 function PlatformTab() {
-<<<<<<< HEAD
   // Live wiring: GET/PUT /admin/platform-settings (full-object PUT — contract style).
   const [f, setF] = useState(null)
   const [saved, setSaved] = useState(false)
@@ -145,10 +153,6 @@ function PlatformTab() {
         : <p className="text-sm text-[#6B7280]">Loading platform settings…</p>}
     </div>
   )
-=======
-  const [hold, setHold] = useState(true)
-  const [saved, setSaved] = useState(false)
->>>>>>> 6772d6d69f00a4fe827095fa4826a3bcf97f2a32
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -158,31 +162,18 @@ function PlatformTab() {
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field label="Institution Name"><input className={inputCls} defaultValue="LeadCity University" /></Field>
         <Field label="Industry"><input className={inputCls} defaultValue="Hospitality & Tourism" /></Field>
-<<<<<<< HEAD
         <Field label="Support Email"><input className={inputCls} value={f.supportEmail} onChange={set('supportEmail')} placeholder="support@campusupdate.example" /></Field>
         <Field label="Support Phone Number"><input className={inputCls} value={f.supportPhone} onChange={set('supportPhone')} placeholder="+234 801 234 5678" /></Field>
-=======
-        <Field label="Support Email"><input className={inputCls} defaultValue="support@campusupdate.example" /></Field>
-        <Field label="Support Phone Number"><input className={inputCls} defaultValue="+234 801 234 5678" /></Field>
->>>>>>> 6772d6d69f00a4fe827095fa4826a3bcf97f2a32
       </div>
 
       <h3 className="text-base font-semibold leading-[18px] text-[#111827]">External events and payments</h3>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field label="Standard listing fee (N)">
-<<<<<<< HEAD
           <input className={inputCls} value={f.listingFee} onChange={set('listingFee')} inputMode="numeric" />
           <span className="text-[13px] leading-4 text-[#9CA3AF]">Pre-filled when an event passes review. You can change it per event.</span>
         </Field>
         <Field label="Days to pay an invoice">
           <input className={inputCls} value={f.invoiceDays} onChange={set('invoiceDays')} inputMode="numeric" />
-=======
-          <input className={inputCls} defaultValue="85000" />
-          <span className="text-[13px] leading-4 text-[#9CA3AF]">Pre-filled when an event passes review. You can change it per event.</span>
-        </Field>
-        <Field label="Days to pay an invoice">
-          <input className={inputCls} defaultValue="07" />
->>>>>>> 6772d6d69f00a4fe827095fa4826a3bcf97f2a32
           <span className="text-[13px] leading-4 text-[#9CA3AF]">Unpaid requests are flagged after this.</span>
         </Field>
       </div>
@@ -195,20 +186,12 @@ function PlatformTab() {
         <Toggle on={hold} onChange={setHold} />
       </div>
 
-<<<<<<< HEAD
       {error && <p className="rounded-lg bg-[#FEE4E2] px-4 py-3 text-sm leading-5 text-[#D92D20]">{error}</p>}
       {saved && <p className="rounded-lg bg-[#E6F6F0] px-4 py-3 text-sm leading-5 text-[#0F7B5F]">Platform settings saved.</p>}
 
       <div className="flex items-center justify-end gap-3 border-t border-[#F3F4F6] pt-6">
         <button type="button" className="h-11 rounded-lg border border-[#E5E7EB] bg-white px-7 text-sm font-medium leading-5 text-[#374151] hover:bg-[#F9FAFB]">Cancel</button>
         <button type="button" onClick={save} disabled={busy} className="h-11 rounded-lg bg-[#4F46E5] px-6 text-sm font-semibold leading-5 text-white hover:bg-[#4338CA] disabled:opacity-60">{busy ? 'Saving…' : 'Save Changes'}</button>
-=======
-      {saved && <p className="rounded-lg bg-[#E6F6F0] px-4 py-3 text-sm leading-5 text-[#0F7B5F]">Platform preferences saved on this device.</p>}
-
-      <div className="flex items-center justify-end gap-3 border-t border-[#F3F4F6] pt-6">
-        <button type="button" className="h-11 rounded-lg border border-[#E5E7EB] bg-white px-7 text-sm font-medium leading-5 text-[#374151] hover:bg-[#F9FAFB]">Cancel</button>
-        <button type="button" onClick={() => setSaved(true)} className="h-11 rounded-lg bg-[#4F46E5] px-6 text-sm font-semibold leading-5 text-white hover:bg-[#4338CA]">Save Changes</button>
->>>>>>> 6772d6d69f00a4fe827095fa4826a3bcf97f2a32
       </div>
     </div>
   )
@@ -222,7 +205,6 @@ const NOTIF_ROWS = [
   { id: 'device', title: 'Sign-in from a new device', sub: 'Email is always sent.', on: true },
 ]
 
-<<<<<<< HEAD
 const CADENCE = [
   { label: 'Immediately', api: 'Immediate' },
   { label: 'Daily at 7am', api: 'Daily' },
@@ -261,12 +243,6 @@ function NotificationsTab() {
       .then(() => { setSaved(true); setBusy(false) })
       .catch((e) => { setError(`Save failed: ${e.message}`); setBusy(false) })
   }
-=======
-function NotificationsTab() {
-  const [rows, setRows] = useState(NOTIF_ROWS)
-  const [push, setPush] = useState(true)
-  const [saved, setSaved] = useState(false)
->>>>>>> 6772d6d69f00a4fe827095fa4826a3bcf97f2a32
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -297,33 +273,20 @@ function NotificationsTab() {
       </div>
 
       <Field label="Summary email">
-<<<<<<< HEAD
         <select className={inputCls} value={cadence} onChange={(e) => setCadence(e.target.value)}>
           {CADENCE.map((o) => (
             <option key={o.label}>{o.label}</option>
-=======
-        <select className={inputCls} defaultValue="Daily at 7am">
-          {['Daily at 7am', 'Weekly on Monday', 'Off'].map((o) => (
-            <option key={o}>{o}</option>
->>>>>>> 6772d6d69f00a4fe827095fa4826a3bcf97f2a32
           ))}
         </select>
         <span className="text-[13px] leading-4 text-[#9CA3AF]">Platform activity and items waiting on you</span>
       </Field>
 
-<<<<<<< HEAD
       <p className="text-[13px] leading-4 text-[#9CA3AF]">Per-type email choices are kept on this device; the platform stores one master email on/off, the push flag and the summary cadence.</p>
       {error && <p className="rounded-lg bg-[#FEE4E2] px-4 py-3 text-sm leading-5 text-[#D92D20]">{error}</p>}
       {saved && <p className="rounded-lg bg-[#E6F6F0] px-4 py-3 text-sm leading-5 text-[#0F7B5F]">Preferences saved.</p>}
 
       <div className="flex justify-end">
         <button type="button" onClick={save} disabled={busy} className="h-11 rounded-lg bg-[#4F46E5] px-6 text-sm font-semibold leading-5 text-white hover:bg-[#4338CA] disabled:opacity-60">{busy ? 'Saving…' : 'Save Preferences'}</button>
-=======
-      {saved && <p className="rounded-lg bg-[#E6F6F0] px-4 py-3 text-sm leading-5 text-[#0F7B5F]">Preferences saved on this device.</p>}
-
-      <div className="flex justify-end">
-        <button type="button" onClick={() => setSaved(true)} className="h-11 rounded-lg bg-[#4F46E5] px-6 text-sm font-semibold leading-5 text-white hover:bg-[#4338CA]">Save Preferences</button>
->>>>>>> 6772d6d69f00a4fe827095fa4826a3bcf97f2a32
       </div>
     </div>
   )
@@ -419,6 +382,10 @@ const TABS = ['Profile', 'Platform', 'Notifications', 'Security']
 export default function SettingsPage({ onNavigate }) {
   const [navOpen, setNavOpen] = useState(false)
   const [tab, setTab] = useState('Profile')
+  useEffect(() => {
+    const t = sessionStorage.getItem('cu-settings-tab')
+    if (t) { setTab(t); sessionStorage.removeItem('cu-settings-tab') }
+  }, [])
   const [profile, setProf] = useState(getProfile())
 
   useEffect(() => {
