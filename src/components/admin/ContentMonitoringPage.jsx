@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Sidebar from './Sidebar.jsx'
 import Topbar from './Topbar.jsx'
 import { StatCard, PageCountFooter, TH, FilterSelect, SearchInput, DotsMenu } from './ui.jsx'
-import { contentApi, adminApi } from '../../lib/api.js'
+import { contentApi, adminApi, calendarApi } from '../../lib/api.js'
 import { timeAgo, StatusCell, UrgencyPill, menuItemsFor } from '../../lib/format.jsx'
 
 const TABS = [
@@ -20,6 +20,55 @@ const SourcePill = ({ name }) => (
     {name || 'Official'}
   </span>
 )
+
+
+function CalendarApprovals() {
+  const [schools, setSchools] = useState([]);
+  const [inst, setInst] = useState('');
+  const [rows, setRows] = useState(null);
+  const [rejectFor, setRejectFor] = useState(null);
+  const [reason, setReason] = useState('');
+  const [msg, setMsg] = useState('');
+  useEffect(() => { adminApi.schools().then((r) => setSchools((Array.isArray(r) ? r : r?.items || []).map((x) => ({ id: x.id, name: x.name })))).catch(() => setSchools([])); }, []);
+  const load = (id) => { if (!id) { setRows(null); return; } calendarApi.manage(id).then((r) => setRows((Array.isArray(r) ? r : r?.items || []).filter((c) => c.status === 'PendingApproval'))).catch(() => setRows([])); };
+  const decide = async (id, ok, why) => {
+    try {
+      if (ok) await calendarApi.publish(id); else await calendarApi.reject(id, why);
+      setMsg(ok ? 'Calendar published for that institution.' : 'Calendar rejected with reason.');
+      setRejectFor(null); setReason(''); load(inst);
+    } catch (e) { setMsg(`Action failed: ${e.message}`); }
+  };
+  return (
+    <section className="rounded-2xl border border-amber-300 bg-amber-50 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div><h2 className="text-sm font-semibold">Calendar approvals</h2><p className="text-xs text-[#6B7280]">Contract §17: pending academic calendars need a platform publish or reject (with reason).</p></div>
+        <select className="h-9 rounded-lg border border-[#D1D5DC] bg-white px-3 text-sm" value={inst} onChange={(e) => { setInst(e.target.value); load(e.target.value); }}>
+          <option value="">Choose institution…</option>
+          {schools.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+        </select>
+      </div>
+      {msg && <p className="mt-2 text-xs text-[#6B7280]">{msg}</p>}
+      {rows && rows.length === 0 && <p className="mt-2 text-xs text-[#6B7280]">No pending calendars for this institution.</p>}
+      {rows && rows.map((c) => (
+        <div key={c.id} className="mt-2 rounded-lg border border-amber-200 bg-white p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div><b className="text-sm">{c.title}</b> <span className="ml-2 text-xs text-[#6B7280]">{c.academicSession}</span></div>
+            <div className="flex gap-2">
+              <button type="button" className="h-8 rounded-lg bg-[#16A34A] px-3 text-xs font-semibold text-white" onClick={() => decide(c.id, true)}>Publish</button>
+              <button type="button" className="h-8 rounded-lg border border-[#D1D5DC] px-3 text-xs" onClick={() => { setRejectFor(rejectFor === c.id ? null : c.id); setReason(''); }}>Reject</button>
+            </div>
+          </div>
+          {rejectFor === c.id && (
+            <div className="mt-2 flex gap-2">
+              <input className="h-9 flex-1 rounded-lg border border-[#D1D5DC] px-3 text-sm" placeholder="Reason (required)" value={reason} onChange={(e) => setReason(e.target.value)} />
+              <button type="button" className="h-9 rounded-lg bg-[#D92D20] px-3 text-xs font-semibold text-white" disabled={reason.trim().length < 3} onClick={() => decide(c.id, false, reason.trim())}>Confirm reject</button>
+            </div>
+          )}
+        </div>
+      ))}
+    </section>
+  );
+}
 
 export default function ContentMonitoringPage({ onNavigate }) {
   const [tab, setTab] = useState('all')
@@ -86,6 +135,7 @@ export default function ContentMonitoringPage({ onNavigate }) {
 
         <main className="flex min-w-0 flex-1 flex-col gap-4 md:gap-6">
           <Topbar title="Content monitoring" subtitle="Everything schools publish" onMenu={() => setNavOpen(true)} />
+          <CalendarApprovals />
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4">
             {STATS.map((s) => (

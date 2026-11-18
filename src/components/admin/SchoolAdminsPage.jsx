@@ -3,22 +3,25 @@ import Sidebar from './Sidebar.jsx'
 import Topbar from './Topbar.jsx'
 import { StatCard, StatusBadge, AvatarChip, PageCountFooter, TH, FilterSelect, SearchInput, DotsMenu } from './ui.jsx'
 import { AdminFormModal, SuccessModal, DeactivateModal } from './modals.jsx'
-import { usersApi, adminApi } from '../../lib/api.js'
+import { usersApi, adminApi, adminsApi } from '../../lib/api.js'
 import { timeAgo } from '../../lib/format.jsx'
 import { PlusIcon, ViewSmIcon, EditSmIcon, PowerOffIcon } from './Icons.jsx'
 
-const STATS = [
-  { title: 'School administrators', value: '07', sub: '+118 this week' },
-  { title: 'Active', value: '06', sub: 'Can sign in and publish' },
-  { title: 'Deactivated', value: '01', sub: 'Cannot sign in' },
-  { title: 'Schools without an admin', value: '03', sub: 'Live or onboarding' },
-]
-
-
-const ROLE_LABEL = { LeadSchoolAdmin: 'Institution administrator', SchoolAdmin: 'Institution administrator', InstitutionAdmin: 'Institution administrator', SuperAdmin: 'Platform administrator' }
+const ROLE_LABEL = { LeadSchoolAdmin: 'Institution administrator', NewsAdmin: 'News administrator', CalendarAdmin: 'Calendar administrator', SchoolAdmin: 'Institution administrator', InstitutionAdmin: 'Institution administrator', SuperAdmin: 'Platform administrator' }
 const pad = (n) => String(n).padStart(2, '0')
 
 export default function SchoolAdminsPage({ onNavigate }) {
+  const [leadOpen, setLeadOpen] = useState(false)
+  const [lf, setLf] = useState({ email: '', password: '', firstName: '', lastName: '', institutionId: '' })
+  const [leadErr, setLeadErr] = useState('')
+  const [leadBusy, setLeadBusy] = useState(false)
+  const [leadMsg, setLeadMsg] = useState('')
+  const [schoolsList, setSchoolsList] = useState([])
+  const createLead = async (e) => {
+    e.preventDefault(); setLeadBusy(true); setLeadErr('');
+    try { await adminsApi.createLead(lf); setLeadMsg('Lead administrator created.'); setLeadOpen(false); setLf({ email: '', password: '', firstName: '', lastName: '', institutionId: '' }); load(); }
+    catch (e2) { setLeadErr(e2.message); } finally { setLeadBusy(false); }
+  };
   const [menu, setMenu] = useState(null)
   const [modal, setModal] = useState(null)
   const [navOpen, setNavOpen] = useState(false)
@@ -29,7 +32,7 @@ export default function SchoolAdminsPage({ onNavigate }) {
   const [noAdminSchools, setNoAdminSchools] = useState(0)
   const load = () => {
     adminApi.users({ pageSize: 200 }).then((d) => setAdmins((d?.items || []).filter((u) => !['Student', 'Staff', 'SuperAdmin'].includes(u.role)))).catch(() => setAdmins([]))
-    adminApi.schools({ pageSize: 100 }).then((d) => setNoAdminSchools((d?.items || []).filter((s) => (s.adminCount ?? 0) === 0).length)).catch(() => {})
+    adminApi.schools({ pageSize: 100 }).then((d) => { const items = d?.items || []; setNoAdminSchools(items.filter((s) => (s.adminCount ?? 0) === 0).length); setSchoolsList(items); }).catch(() => {})
   }
   useEffect(() => { load() }, [])
 
@@ -73,6 +76,13 @@ export default function SchoolAdminsPage({ onNavigate }) {
             >
               <PlusIcon className="h-5 w-5" stroke="#fff" />
               Add New Administrator
+            </button>
+            <button
+              type="button"
+              onClick={() => setLeadOpen(true)}
+              className="flex h-[54px] w-full shrink-0 items-center justify-center gap-3 rounded-[10px] border border-[#4F46E5] bg-white px-7 text-base font-semibold leading-[22px] text-[#4F46E5] hover:bg-[#EEEDFD] md:h-[66px] md:w-auto"
+            >
+              Add Lead Admin
             </button>
           </div>
 
@@ -163,6 +173,29 @@ export default function SchoolAdminsPage({ onNavigate }) {
             <PageCountFooter />
           </div>
         </main>
+      {leadOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <form onSubmit={createLead} className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+            <h2 className="text-sm font-semibold">Provision a lead administrator</h2>
+            <p className="mb-3 text-xs text-[#6B7280]">Contract §11: leads manage their institution’s news, calendars and delegated admins.</p>
+            <div className="grid gap-2">
+              <input className="h-10 rounded-lg border border-[#D1D5DC] px-3 text-sm" placeholder="First name" required value={lf.firstName} onChange={(e) => setLf({ ...lf, firstName: e.target.value })} />
+              <input className="h-10 rounded-lg border border-[#D1D5DC] px-3 text-sm" placeholder="Last name" required value={lf.lastName} onChange={(e) => setLf({ ...lf, lastName: e.target.value })} />
+              <input className="h-10 rounded-lg border border-[#D1D5DC] px-3 text-sm" type="email" placeholder="Email" required value={lf.email} onChange={(e) => setLf({ ...lf, email: e.target.value })} />
+              <input className="h-10 rounded-lg border border-[#D1D5DC] px-3 text-sm" type="password" placeholder="Password (12+ chars)" required minLength={12} value={lf.password} onChange={(e) => setLf({ ...lf, password: e.target.value })} />
+              <select className="h-10 rounded-lg border border-[#D1D5DC] px-3 text-sm" required value={lf.institutionId} onChange={(e) => setLf({ ...lf, institutionId: e.target.value })}>
+                <option value="">Institution…</option>
+                {schoolsList.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+              </select>
+              {leadErr && <p className="text-xs text-red-600">{leadErr}</p>}
+              <div className="flex justify-end gap-2">
+                <button type="button" className="h-9 rounded-lg border border-[#D1D5DC] px-3 text-sm" onClick={() => setLeadOpen(false)}>Cancel</button>
+                <button type="submit" className="h-9 rounded-lg bg-[#4F46E5] px-3 text-sm font-semibold text-white" disabled={leadBusy}>{leadBusy ? 'Creating…' : 'Create lead'}</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
       </div>
 
       {modal === 'add' && <AdminFormModal mode="add" onClose={() => setModal(null)} onSubmit={addAdmin} error={formError} busy={busy} />}
@@ -172,3 +205,4 @@ export default function SchoolAdminsPage({ onNavigate }) {
     </div>
   )
 }
+
