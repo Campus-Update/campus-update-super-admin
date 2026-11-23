@@ -15,12 +15,17 @@ export function StatCard({ title, value, sub, subColor = '#666666' }) {
 }
 
 export function StatusBadge({ label = 'Active' }) {
+  const styles = label === 'Active'
+    ? { color: '#109E75', background: 'rgba(16,158,117,0.1)' }
+    : label === 'Suspended'
+      ? { color: '#B54708', background: '#FEF0C7' }
+      : { color: '#D92D20', background: '#FEE4E2' }
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-3 py-[5px] text-sm font-medium leading-[15.2px] text-[#109E75]"
-      style={{ backgroundColor: 'rgba(16,158,117,0.1)' }}
+      className="inline-flex items-center gap-1.5 rounded-full px-3 py-[5px] text-sm font-medium leading-[15.2px]"
+      style={{ color: styles.color, backgroundColor: styles.background }}
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-[#109E75]" />
+      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: styles.color }} />
       {label}
     </span>
   )

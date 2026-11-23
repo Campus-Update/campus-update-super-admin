@@ -3,22 +3,25 @@ import Sidebar from './Sidebar.jsx'
 import Topbar from './Topbar.jsx'
 import { StatCard, StatusBadge, AvatarChip, PageCountFooter, TH, FilterSelect, SearchInput, DotsMenu } from './ui.jsx'
 import { AdminFormModal, SuccessModal, DeactivateModal } from './modals.jsx'
-import { usersApi, adminApi } from '../../lib/api.js'
+import { usersApi, adminApi, adminsApi } from '../../lib/api.js'
 import { timeAgo } from '../../lib/format.jsx'
 import { PlusIcon, ViewSmIcon, EditSmIcon, PowerOffIcon } from './Icons.jsx'
-
-const STATS = [
-  { title: 'School administrators', value: '07', sub: '+118 this week' },
-  { title: 'Active', value: '06', sub: 'Can sign in and publish' },
-  { title: 'Deactivated', value: '01', sub: 'Cannot sign in' },
-  { title: 'Schools without an admin', value: '03', sub: 'Live or onboarding' },
-]
-
 
 const ROLE_LABEL = { LeadSchoolAdmin: 'Institution administrator', NewsAdmin: 'News administrator', CalendarAdmin: 'Calendar administrator', SchoolAdmin: 'Institution administrator', InstitutionAdmin: 'Institution administrator', SuperAdmin: 'Platform administrator' }
 const pad = (n) => String(n).padStart(2, '0')
 
 export default function SchoolAdminsPage({ onNavigate }) {
+  const [leadOpen, setLeadOpen] = useState(false)
+  const [lf, setLf] = useState({ email: '', password: '', firstName: '', lastName: '', institutionId: '' })
+  const [leadErr, setLeadErr] = useState('')
+  const [leadBusy, setLeadBusy] = useState(false)
+  const [leadMsg, setLeadMsg] = useState('')
+  const [schoolsList, setSchoolsList] = useState([])
+  const createLead = async (e) => {
+    e.preventDefault(); setLeadBusy(true); setLeadErr('');
+    try { await adminsApi.createLead(lf); setLeadMsg('Lead administrator created.'); setLeadOpen(false); setLf({ email: '', password: '', firstName: '', lastName: '', institutionId: '' }); load(); }
+    catch (e2) { setLeadErr(e2.message); } finally { setLeadBusy(false); }
+  };
   const [menu, setMenu] = useState(null)
   const [modal, setModal] = useState(null)
   const [navOpen, setNavOpen] = useState(false)
@@ -26,15 +29,33 @@ export default function SchoolAdminsPage({ onNavigate }) {
   const [formError, setFormError] = useState('')
   const [admins, setAdmins] = useState([])
   const [roleFilter, setRoleFilter] = useState('All roles')
+  const [institutionFilter, setInstitutionFilter] = useState('All Institutions')
+  const [statusFilter, setStatusFilter] = useState('All Statuses')
+  const [search, setSearch] = useState('')
   const [noAdminSchools, setNoAdminSchools] = useState(0)
   const load = () => {
     adminApi.users({ pageSize: 200 }).then((d) => setAdmins((d?.items || []).filter((u) => !['Student', 'Staff', 'SuperAdmin'].includes(u.role)))).catch(() => setAdmins([]))
-    adminApi.schools({ pageSize: 100 }).then((d) => setNoAdminSchools((d?.items || []).filter((s) => (s.adminCount ?? 0) === 0).length)).catch(() => {})
+    adminApi.schools({ pageSize: 100 }).then((d) => { const items = d?.items || []; setNoAdminSchools(items.filter((s) => (s.adminCount ?? 0) === 0).length); setSchoolsList(items); }).catch(() => {})
   }
   useEffect(() => { load() }, [])
 
   const active = admins.filter((a) => a.isActive).length
-  const visible = roleFilter === 'All roles' ? admins : admins.filter((r) => (ROLE_LABEL[r.role] || r.role) === roleFilter)
+  const institutionOptions = ['All Institutions', ...new Set(admins.map((a) => a.institutionName).filter(Boolean))]
+  const visible = admins.filter((r) => {
+    const roleMatches = roleFilter === 'All roles' || (ROLE_LABEL[r.role] || r.role) === roleFilter
+    const institutionMatches = institutionFilter === 'All Institutions' || r.institutionName === institutionFilter
+    const statusMatches = statusFilter === 'All Statuses'
+      || (statusFilter === 'Active' && r.isActive)
+      || (statusFilter === 'Deactivated' && !r.isActive)
+    const haystack = `${r.firstName || ''} ${r.lastName || ''} ${r.email || ''} ${r.institutionName || ''}`.toLowerCase()
+    return roleMatches && institutionMatches && statusMatches && (!search.trim() || haystack.includes(search.trim().toLowerCase()))
+  })
+  const clearFilters = () => {
+    setSearch('')
+    setRoleFilter('All roles')
+    setInstitutionFilter('All Institutions')
+    setStatusFilter('All Statuses')
+  }
   const stats = [
     { title: 'School administrators', value: pad(admins.length), sub: 'On the platform' },
     { title: 'Active', value: pad(active), sub: 'Can sign in and publish' },
@@ -64,7 +85,7 @@ export default function SchoolAdminsPage({ onNavigate }) {
         <main className="flex min-w-0 flex-1 flex-col gap-4 md:gap-6">
           <div className="flex flex-col gap-4">
             <Topbar title="School administrators" subtitle="Who can publish, and where" onMenu={() => setNavOpen(true)} />
-            <div className="flex justify-end">
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 onClick={() => setModal('add')}
@@ -72,6 +93,13 @@ export default function SchoolAdminsPage({ onNavigate }) {
               >
                 <PlusIcon className="h-5 w-5" stroke="#fff" />
                 Add New Administrator
+              </button>
+              <button
+                type="button"
+                onClick={() => setLeadOpen(true)}
+                className="flex h-[54px] w-full shrink-0 items-center justify-center gap-3 rounded-[10px] border border-[#4F46E5] bg-white px-7 text-base font-semibold leading-[22px] text-[#4F46E5] hover:bg-[#EEEDFD] md:h-[66px] md:w-auto"
+              >
+                Add Lead Admin
               </button>
             </div>
           </div>
@@ -85,23 +113,38 @@ export default function SchoolAdminsPage({ onNavigate }) {
 
           {/* Table card */}
           <div className="flex flex-col overflow-hidden rounded-[10px] border border-[#DBDBDB] bg-white">
-            <div className="flex items-center gap-2 border-b border-[#E5E7EB] px-4 py-2">
-              <span className="px-2 text-sm font-semibold leading-[15.2px] text-[#344054]">All Administrators</span>
-            </div>
-
             {/* Filter bar */}
             <div className="flex flex-col gap-4 px-4 pt-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex w-full max-w-[640px] flex-wrap items-center gap-4">
-                <SearchInput placeholder="Search by name, email or institution" />
+                <SearchInput placeholder="Search by name, email or institution" value={search} onChange={(e) => setSearch(e.target.value)} />
                 <FilterSelect value={roleFilter} onChange={setRoleFilter} options={['All roles', 'Institution administrator', 'Faculty administrator', 'Department administrator']} />
               </div>
               <div className="flex flex-wrap items-center gap-4">
-                <FilterSelect value="All Institutions" options={['All Institutions', 'Lead City University', 'University of Ibadan', 'Obafemi Awolowo University']} />
-                <FilterSelect value="All Statuses" options={['All Statuses', 'Active', 'Deactivated']} />
-                <button type="button" className="text-sm font-medium leading-[15.2px] text-[#4F46E5]">
+                <FilterSelect value={institutionFilter} onChange={setInstitutionFilter} options={institutionOptions} />
+                <FilterSelect value={statusFilter} onChange={setStatusFilter} options={['All Statuses', 'Active', 'Deactivated']} />
+                <button type="button" onClick={clearFilters} className="text-sm font-medium leading-[15.2px] text-[#4F46E5]">
                   Clear filters
                 </button>
               </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 px-4 pt-6">
+              {[
+                { label: 'Total:', value: admins.length, filter: 'All Statuses' },
+                { label: 'Active', value: active, filter: 'Active', dot: '#109E75' },
+                { label: 'Deactivated', value: admins.length - active, filter: 'Deactivated', dot: '#D85A30' },
+              ].map((chip) => (
+                <button
+                  key={chip.label}
+                  type="button"
+                  onClick={() => setStatusFilter(chip.filter)}
+                  className="flex h-11 items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-5 text-sm leading-[15.2px] text-[#344054]"
+                >
+                  {chip.dot && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: chip.dot }} />}
+                  <span>{chip.label}</span>
+                  <span className="font-semibold">{pad(chip.value)}</span>
+                </button>
+              ))}
             </div>
 
             {/* Table */}
@@ -160,9 +203,32 @@ export default function SchoolAdminsPage({ onNavigate }) {
               </table>
             </div>
 
-            <PageCountFooter />
+            <PageCountFooter left={`Showing ${visible.length ? `1–${visible.length}` : 0} of ${visible.length} results`} />
           </div>
         </main>
+      {leadOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <form onSubmit={createLead} className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+            <h2 className="text-sm font-semibold">Provision a lead administrator</h2>
+            <p className="mb-3 text-xs text-[#6B7280]">Contract §11: leads manage their institution’s news, calendars and delegated admins.</p>
+            <div className="grid gap-2">
+              <input className="h-10 rounded-lg border border-[#D1D5DC] px-3 text-sm" placeholder="First name" required value={lf.firstName} onChange={(e) => setLf({ ...lf, firstName: e.target.value })} />
+              <input className="h-10 rounded-lg border border-[#D1D5DC] px-3 text-sm" placeholder="Last name" required value={lf.lastName} onChange={(e) => setLf({ ...lf, lastName: e.target.value })} />
+              <input className="h-10 rounded-lg border border-[#D1D5DC] px-3 text-sm" type="email" placeholder="Email" required value={lf.email} onChange={(e) => setLf({ ...lf, email: e.target.value })} />
+              <input className="h-10 rounded-lg border border-[#D1D5DC] px-3 text-sm" type="password" placeholder="Password (12+ chars)" required minLength={12} value={lf.password} onChange={(e) => setLf({ ...lf, password: e.target.value })} />
+              <select className="h-10 rounded-lg border border-[#D1D5DC] px-3 text-sm" required value={lf.institutionId} onChange={(e) => setLf({ ...lf, institutionId: e.target.value })}>
+                <option value="">Institution…</option>
+                {schoolsList.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+              </select>
+              {leadErr && <p className="text-xs text-red-600">{leadErr}</p>}
+              <div className="flex justify-end gap-2">
+                <button type="button" className="h-9 rounded-lg border border-[#D1D5DC] px-3 text-sm" onClick={() => setLeadOpen(false)}>Cancel</button>
+                <button type="submit" className="h-9 rounded-lg bg-[#4F46E5] px-3 text-sm font-semibold text-white" disabled={leadBusy}>{leadBusy ? 'Creating…' : 'Create lead'}</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
       </div>
 
       {modal === 'add' && <AdminFormModal mode="add" onClose={() => setModal(null)} onSubmit={addAdmin} error={formError} busy={busy} />}
@@ -172,3 +238,4 @@ export default function SchoolAdminsPage({ onNavigate }) {
     </div>
   )
 }
+

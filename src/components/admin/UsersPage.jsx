@@ -7,7 +7,20 @@ import { ViewSmIcon, AssignIcon, OctagonPauseIcon, PowerOffIcon } from './Icons.
 import { adminApi, usersApi } from '../../lib/api.js'
 import { timeAgo } from '../../lib/format.jsx'
 
-const ROLE_LABEL = { Student: 'Student', Staff: 'Staff', InstitutionAdmin: 'School admin', SuperAdmin: 'Platform admin' }
+const ROLE_LABEL = {
+  Student: 'Student',
+  Staff: 'Staff',
+  InstitutionAdmin: 'School admin',
+  LeadSchoolAdmin: 'School admin',
+  SchoolAdmin: 'School admin',
+  NewsAdmin: 'School admin',
+  CalendarAdmin: 'School admin',
+  SuperAdmin: 'Platform admin',
+}
+const isSchoolAdmin = (user) => ROLE_LABEL[user.role] === 'School admin'
+const isSuspended = (user) => user.isSuspended || user.status === 'Suspended'
+const isActive = (user) => user.isActive && !isSuspended(user)
+const isDeactivated = (user) => !user.isActive && !isSuspended(user)
 const pad = (n) => String(n).padStart(2, '0')
 
 const STATS = [
@@ -61,6 +74,10 @@ export default function UsersPage({ onNavigate }) {
   const [modal, setModal] = useState(null)
   const [navOpen, setNavOpen] = useState(false)
   const [users, setUsers] = useState([])
+  const [search, setSearch] = useState('')
+  const [typeFilter, setTypeFilter] = useState('All user types')
+  const [institutionFilter, setInstitutionFilter] = useState('All Institutions')
+  const [statusFilter, setStatusFilter] = useState('All Statuses')
   const load = () => adminApi.users({ pageSize: 200 }).then((d) => setUsers(d?.items || [])).catch(() => setUsers([]))
   useEffect(() => { load() }, [])
 
@@ -68,15 +85,39 @@ export default function UsersPage({ onNavigate }) {
   const stats = [
     { title: 'Students', value: pad(count((u) => u.role === 'Student')), sub: `Across ${new Set(users.filter((u) => u.role === 'Student').map((u) => u.institutionName)).size} institutions` },
     { title: 'Staff', value: pad(count((u) => u.role === 'Staff')), sub: 'Can sign in and publish' },
-    { title: 'School administrators', value: pad(count((u) => u.role === 'InstitutionAdmin')), sub: `${pad(count((u) => u.role === 'InstitutionAdmin' && u.isActive))} active` },
+    { title: 'School administrators', value: pad(count(isSchoolAdmin)), sub: `${pad(count((u) => isSchoolAdmin(u) && u.isActive))} active` },
     { title: 'Platform administrators', value: pad(count((u) => u.role === 'SuperAdmin')), sub: 'Campus Update team' },
   ]
   const chips = [
     { label: 'Total:', value: pad(users.length), dot: null },
-    { label: 'Active', value: pad(count((u) => u.isActive)), dot: '#109E75' },
-    { label: 'Deactivated', value: pad(count((u) => !u.isActive)), dot: '#D85A30' },
-    { label: 'Suspended', value: '00', dot: '#EAB308' },
+    { label: 'Active', value: pad(count(isActive)), dot: '#109E75' },
+    { label: 'Deactivated', value: pad(count(isDeactivated)), dot: '#D85A30' },
+    { label: 'Suspended', value: pad(count(isSuspended)), dot: '#EAB308' },
   ]
+  const institutionOptions = ['All Institutions', ...new Set(users.map((u) => u.institutionName).filter(Boolean))]
+  const visibleUsers = users.filter((u) => {
+    const roleLabel = ROLE_LABEL[u.role] || u.role
+    const typeMatches = typeFilter === 'All user types'
+      || (typeFilter === 'Students' && u.role === 'Student')
+      || (typeFilter === 'Staff' && u.role === 'Staff')
+      || (typeFilter === 'School admins' && roleLabel === 'School admin')
+      || (typeFilter === 'Platform admins' && roleLabel === 'Platform admin')
+    const statusMatches = statusFilter === 'All Statuses'
+      || (statusFilter === 'Active' && isActive(u))
+      || (statusFilter === 'Deactivated' && isDeactivated(u))
+      || (statusFilter === 'Suspended' && isSuspended(u))
+    const haystack = `${u.firstName || ''} ${u.lastName || ''} ${u.email || ''} ${u.institutionName || ''} ${roleLabel}`.toLowerCase()
+    return typeMatches
+      && statusMatches
+      && (institutionFilter === 'All Institutions' || u.institutionName === institutionFilter)
+      && (!search.trim() || haystack.includes(search.trim().toLowerCase()))
+  })
+  const clearFilters = () => {
+    setSearch('')
+    setTypeFilter('All user types')
+    setInstitutionFilter('All Institutions')
+    setStatusFilter('All Statuses')
+  }
 
   return (
     <div className="min-h-screen w-full bg-[#E9E9EA] p-3 md:p-[27px]">
@@ -95,19 +136,15 @@ export default function UsersPage({ onNavigate }) {
 
           {/* Table card */}
           <div className="flex flex-col overflow-hidden rounded-[10px] border border-[#DBDBDB] bg-white">
-            <div className="flex items-center gap-2 border-b border-[#E5E7EB] px-4 py-2">
-              <span className="px-2 text-sm font-semibold leading-[15.2px] text-[#344054]">All Accounts</span>
-            </div>
-
             {/* Filter bar */}
             <div className="flex flex-wrap items-center justify-between gap-4 px-4 pt-6">
               <div className="flex flex-wrap items-center gap-4">
-                <SearchInput />
-                <FilterSelect value="All user types" options={['All user types', 'Students', 'Staff', 'School admins', 'Platform admins']} />
-                <FilterSelect value="All Institutions" options={['All Institutions', 'Private University', 'Federal University', 'State University', 'Polytechnic', 'College of Education', 'Others']} />
-                <FilterSelect value="All Statuses" options={['All Statuses', 'Active', 'Suspended', 'Deactivated']} />
+                <SearchInput value={search} onChange={(e) => setSearch(e.target.value)} />
+                <FilterSelect value={typeFilter} onChange={setTypeFilter} options={['All user types', 'Students', 'Staff', 'School admins', 'Platform admins']} />
+                <FilterSelect value={institutionFilter} onChange={setInstitutionFilter} options={institutionOptions} />
+                <FilterSelect value={statusFilter} onChange={setStatusFilter} options={['All Statuses', 'Active', 'Suspended', 'Deactivated']} />
               </div>
-              <button type="button" className="text-sm font-medium leading-[15.2px] text-[#4F46E5]">
+              <button type="button" onClick={clearFilters} className="text-sm font-medium leading-[15.2px] text-[#4F46E5]">
                 Clear filters
               </button>
             </div>
@@ -118,6 +155,7 @@ export default function UsersPage({ onNavigate }) {
                 <button
                   key={c.label}
                   type="button"
+                  onClick={() => setStatusFilter(c.label === 'Total:' ? 'All Statuses' : c.label)}
                   className="flex h-11 items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-5 text-sm leading-[15.2px] text-[#344054]"
                 >
                   {c.dot && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: c.dot }} />}
@@ -143,7 +181,7 @@ export default function UsersPage({ onNavigate }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((r, i) => (
+                  {visibleUsers.map((r, i) => (
                     <tr key={r.id || i} className="h-[58px] bg-white">
                       <td className="whitespace-nowrap px-4 py-2.5">
                         <div className="flex items-center gap-4">
@@ -159,7 +197,7 @@ export default function UsersPage({ onNavigate }) {
                       <td className="px-4 py-2.5 text-[13px] leading-[14px] text-[#344054]">—</td>
                       <td className="whitespace-nowrap px-4 py-2.5 text-[13px] leading-[14px] text-[#344054]">—</td>
                       <td className="whitespace-nowrap px-4 py-2.5">
-                        <StatusBadge label={r.isActive ? 'Active' : 'Deactivated'} />
+                        <StatusBadge label={isSuspended(r) ? 'Suspended' : r.isActive ? 'Active' : 'Deactivated'} />
                       </td>
                       <td className="whitespace-nowrap px-4 py-2.5 text-[13px] leading-[14px] text-[#344054]">{r.lastActiveAt ? timeAgo(r.lastActiveAt) : 'Not signed in yet'}</td>
                       <td className="whitespace-nowrap px-4 py-2.5">
@@ -178,16 +216,16 @@ export default function UsersPage({ onNavigate }) {
                       </td>
                     </tr>
                   ))}
-                  {users.length === 0 && (
+                  {visibleUsers.length === 0 && (
                     <tr className="border-t border-[#EDEDF0]">
-                      <td colSpan={8} className="px-4 py-10 text-center text-sm leading-5 text-[#6B7280]">No users on the platform yet.</td>
+                      <td colSpan={8} className="px-4 py-10 text-center text-sm leading-5 text-[#6B7280]">No users match these filters.</td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
 
-            <PageCountFooter left={`Showing ${users.length ? `1-${users.length}` : 0} of ${users.length} results`} />
+            <PageCountFooter left={`Showing ${visibleUsers.length ? `1-${visibleUsers.length}` : 0} of ${visibleUsers.length} results`} />
           </div>
 
           {/* Registration by department */}

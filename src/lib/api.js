@@ -103,6 +103,8 @@ const qsApi = (base, params = {}) => {
 
 export const authApi = {
   login: (email, password) => api('/api/v1/auth/login', { method: 'POST', body: { email, password }, auth: false }),
+  forgotPassword: (email) => api('/api/v1/auth/forgot-password', { method: 'POST', body: { email }, auth: false }),
+  resetPassword: (b) => api('/api/v1/auth/reset-password', { method: 'POST', body: b, auth: false }),
   profile: () => api('/api/v1/auth/profile'),
   updateProfile: (b) => api('/api/v1/auth/profile', { method: 'PUT', body: b }),
   uploadPhoto: (body) => api('/api/v1/auth/profile/photo', { method: 'POST', body }),
@@ -157,3 +159,14 @@ export const contentApi = {
   setStatus: (id, status) => api(`/api/v1/content/${id}/status`, { method: 'PATCH', body: { status } }),
   remove: (id) => api(`/api/v1/content/${id}`, { method: 'DELETE' }),
 }
+
+// Contract §17: calendar approvals (publish / reject with reason).
+export const calendarApi = {
+  manage: (institutionId) => api(`/api/v1/calendar/manage?institutionId=${institutionId}`),
+  publish: (id) => api(`/api/v1/calendar/${id}/publish`, { method: 'POST', body: {} }),
+  reject: (id, reason) => api(`/api/v1/calendar/${id}/reject`, { method: 'POST', body: { reason } }),
+};
+// Contract §11: SuperAdmin provisions institution lead administrators.
+export const adminsApi = {
+  createLead: (b) => api('/api/v1/admin/lead-administrators', { method: 'POST', body: b }),
+};
