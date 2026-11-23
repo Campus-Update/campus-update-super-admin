@@ -31,7 +31,7 @@ export default function LoginPage({ onLoggedIn }) {
     <div className="flex min-h-screen w-full items-center justify-center bg-[#E9E9EA] p-4">
       <div className="w-full max-w-[440px] rounded-2xl border border-[#DBDBDB] bg-white p-8">
         <div className="flex items-center gap-3">
-          <img src="/logo-admin-light.png" alt="" className="h-9 w-9 shrink-0" />
+          <img src="/logo-admin.png" alt="" className="h-9 w-9 shrink-0" />
           <span className="text-xl font-bold tracking-[-0.3px] text-[#17171B]">Campus Update</span>
         </div>
         <h1 className="mt-7 text-2xl font-semibold leading-8 text-[#111827]">Super Admin sign in</h1>
