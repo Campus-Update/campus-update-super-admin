@@ -65,25 +65,25 @@ export default function SchoolAdminsPage({ onNavigate }) {
         <Sidebar active="admins" publishingAs="Campus Update" onNavigate={onNavigate} open={navOpen} onClose={() => setNavOpen(false)} />
 
         <main className="flex min-w-0 flex-1 flex-col gap-4 md:gap-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div className="min-w-0 flex-1">
-              <Topbar title="School administrators" subtitle="Who can publish, and where" onMenu={() => setNavOpen(true)} />
+          <div className="flex flex-col gap-4">
+            <Topbar title="School administrators" subtitle="Who can publish, and where" onMenu={() => setNavOpen(true)} />
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setModal('add')}
+                className="flex h-[54px] w-full shrink-0 items-center justify-center gap-3 rounded-[10px] bg-[#4F46E5] px-7 text-base font-semibold leading-[22px] text-white hover:bg-[#4338CA] md:h-[66px] md:w-auto"
+              >
+                <PlusIcon className="h-5 w-5" stroke="#fff" />
+                Add New Administrator
+              </button>
+              <button
+                type="button"
+                onClick={() => setLeadOpen(true)}
+                className="flex h-[54px] w-full shrink-0 items-center justify-center gap-3 rounded-[10px] border border-[#4F46E5] bg-white px-7 text-base font-semibold leading-[22px] text-[#4F46E5] hover:bg-[#EEEDFD] md:h-[66px] md:w-auto"
+              >
+                Add Lead Admin
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setModal('add')}
-              className="flex h-[54px] w-full shrink-0 items-center justify-center gap-3 rounded-[10px] bg-[#4F46E5] px-7 text-base font-semibold leading-[22px] text-white hover:bg-[#4338CA] md:h-[66px] md:w-auto"
-            >
-              <PlusIcon className="h-5 w-5" stroke="#fff" />
-              Add New Administrator
-            </button>
-            <button
-              type="button"
-              onClick={() => setLeadOpen(true)}
-              className="flex h-[54px] w-full shrink-0 items-center justify-center gap-3 rounded-[10px] border border-[#4F46E5] bg-white px-7 text-base font-semibold leading-[22px] text-[#4F46E5] hover:bg-[#EEEDFD] md:h-[66px] md:w-auto"
-            >
-              Add Lead Admin
-            </button>
           </div>
 
           {/* Stats */}
