@@ -73,7 +73,7 @@ function CalendarApprovals() {
                 <td className="px-4 py-2.5 text-sm font-medium text-[#344054]">{c.title}</td>
                 <td className="px-4 py-2.5 text-[13px] text-[#6B7280]">{c.academicSession}</td>
                 <td className="px-4 py-2.5"><StatusCell status={c.status} /></td>
-                <td className="px-4 py-2.5 text-[13px] text-[#6B7280]">{timeAgo(c.publishedAt) || '—'}</td>
+                <td className="px-4 py-2.5 text-[13px] text-[#6B7280]">{timeAgo(c.submittedAt || c.createdAt || c.publishedAt) || '—'}</td>
                 <td className="px-4 py-2.5">
                   <div className="flex gap-2">
                     <button type="button" className="h-8 rounded-lg bg-[#4F46E5] px-3 text-xs font-semibold text-white" onClick={() => decide(c.id, true)}>Approve</button>

@@ -117,7 +117,7 @@ export default function SchoolAdminsPage({ onNavigate }) {
             <div className="flex flex-col gap-4 px-4 pt-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex w-full max-w-[640px] flex-wrap items-center gap-4">
                 <SearchInput placeholder="Search by name, email or institution" value={search} onChange={(e) => setSearch(e.target.value)} />
-                <FilterSelect value={roleFilter} onChange={setRoleFilter} options={['All roles', 'Institution administrator', 'Faculty administrator', 'Department administrator']} />
+                <FilterSelect value={roleFilter} onChange={setRoleFilter} options={['All roles', 'Institution administrator', 'News administrator', 'Calendar administrator']} />
               </div>
               <div className="flex flex-wrap items-center gap-4">
                 <FilterSelect value={institutionFilter} onChange={setInstitutionFilter} options={institutionOptions} />
