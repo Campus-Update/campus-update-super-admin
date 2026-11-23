@@ -1,4 +1,5 @@
 import {
+  LogoMark,
   UniversityIcon,
   DashboardIcon,
   NewsIcon,
@@ -66,7 +67,7 @@ function NavItem({ item, active, onNavigate, onClose }) {
 
 export default function Sidebar({
   active = 'overview',
-  publishingAs = 'Osun State University',
+  publishingAs = 'Campus Update',
   onNavigate,
   open = false,
   onClose,
@@ -77,14 +78,14 @@ export default function Sidebar({
         <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} aria-hidden="true" />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-[321px] max-w-[85vw] shrink-0 flex-col justify-between overflow-y-auto rounded-[10px] bg-white/95 px-[26px] pb-[25px] pt-[29px] backdrop-blur transition-transform duration-200 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-[321px] max-w-[85vw] shrink-0 flex-col overflow-hidden rounded-[10px] bg-white/95 px-[26px] pb-[25px] pt-[29px] backdrop-blur transition-transform duration-200 lg:min-h-[calc(100vh-54px)] ${
           open ? 'translate-x-0' : '-translate-x-full'
         } lg:static lg:z-auto lg:translate-x-0 lg:bg-white/60`}
       >
-      <div className="flex flex-col gap-6">
+      <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
         <div className="flex items-center gap-[7px]">
-          <img src="/logo-admin.svg" alt="Campus Update logo" className="h-[38px] w-8" />
-          <span className="text-2xl font-semibold leading-[26px] text-black">Campus Update</span>
+          <LogoMark className="h-[38px] w-8 shrink-0" />
+          <span className="whitespace-nowrap text-2xl font-semibold leading-[26px] text-black">Campus Update</span>
         </div>
 
         <div className="rounded-2xl border border-[#4F46E5] bg-[#201C5C] p-6">
@@ -120,7 +121,7 @@ export default function Sidebar({
         ))}
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex shrink-0 flex-col gap-1.5">
         <button
           type="button"
           onClick={() => onNavigate?.('settings')}
