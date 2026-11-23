@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Sidebar from './Sidebar.jsx'
 import Topbar from './Topbar.jsx'
 import { adminApi, authApi, getProfile, setProfile } from '../../lib/api.js'
@@ -31,6 +31,16 @@ function ProfileTab({ profile, onSaved }) {
   const [last, setLast] = useState(profile?.lastName || '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const photoRef = useRef(null)
+  const pickPhoto = (e) => {
+    const img = e.target.files?.[0]
+    if (!img) return
+    const form = new FormData()
+    form.append('file', img)
+    authApi.uploadPhoto(form)
+      .then((updated) => { setProfile(updated); onSaved && onSaved() })
+      .catch(() => setError('Photo upload failed.'))
+  }
 
   const save = async () => {
     setBusy(true)
@@ -55,7 +65,10 @@ function ProfileTab({ profile, onSaved }) {
 
       <div className="flex items-center gap-5">
         <span className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-[#E5E7EB]">
-          <img src="/images/avatar-john.png" alt="Profile" className="h-full w-full object-cover" />
+          <button type="button" aria-label="Change profile photo" onClick={() => photoRef.current?.click()} className="h-full w-full">
+            <img src={profile?.profileImageUrl || '/images/avatar-john.png'} alt="Profile" className="h-full w-full object-cover" />
+          </button>
+          <input ref={photoRef} type="file" accept="image/png, image/jpeg" hidden onChange={pickPhoto} />
           <span className="absolute bottom-0 flex h-7 w-full items-center justify-center bg-black/50">
             <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" stroke="#fff" strokeWidth="1.3" fill="none" strokeLinejoin="round"><path d="M2 5h3l1-1.5h4L11 5h3v8H2V5Zm6 5.5A2.5 2.5 0 1 0 8 5.5a2.5 2.5 0 0 0 0 5Z" /></svg>
           </span>
@@ -369,6 +382,10 @@ const TABS = ['Profile', 'Platform', 'Notifications', 'Security']
 export default function SettingsPage({ onNavigate }) {
   const [navOpen, setNavOpen] = useState(false)
   const [tab, setTab] = useState('Profile')
+  useEffect(() => {
+    const t = sessionStorage.getItem('cu-settings-tab')
+    if (t) { setTab(t); sessionStorage.removeItem('cu-settings-tab') }
+  }, [])
   const [profile, setProf] = useState(getProfile())
 
   useEffect(() => {
