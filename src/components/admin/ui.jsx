@@ -121,7 +121,7 @@ export function FilterSelect({ value, options, onChange }) {
 
 export function SearchInput({ placeholder = 'Search by name, email or department', value = '', onChange, width = 320 }) {
   return (
-    <label className="relative flex shrink-0 items-center" style={{ width }}>
+    <label className="relative flex min-w-0 items-center" style={{ width: '100%', maxWidth: width }}>
       <span className="absolute left-4 flex h-4 w-4 items-center justify-center">
         <svg viewBox="0 0 16 16" className="h-4 w-4" stroke="#6B7280" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="7" cy="7" r="4.5" />
