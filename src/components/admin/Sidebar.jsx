@@ -1,5 +1,4 @@
 import {
-  LogoMark,
   UniversityIcon,
   DashboardIcon,
   NewsIcon,
@@ -84,7 +83,7 @@ export default function Sidebar({
       >
       <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
         <div className="flex items-center gap-[7px]">
-          <LogoMark className="h-[38px] w-8 shrink-0" />
+          <img src="/logo-admin-light.png" alt="" className="h-[38px] w-[38px] shrink-0" />
           <span className="whitespace-nowrap text-2xl font-semibold leading-[26px] text-black">Campus Update</span>
         </div>
 
