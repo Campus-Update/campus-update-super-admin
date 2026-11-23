@@ -29,6 +29,9 @@ export default function SchoolAdminsPage({ onNavigate }) {
   const [formError, setFormError] = useState('')
   const [admins, setAdmins] = useState([])
   const [roleFilter, setRoleFilter] = useState('All roles')
+  const [institutionFilter, setInstitutionFilter] = useState('All Institutions')
+  const [statusFilter, setStatusFilter] = useState('All Statuses')
+  const [search, setSearch] = useState('')
   const [noAdminSchools, setNoAdminSchools] = useState(0)
   const load = () => {
     adminApi.users({ pageSize: 200 }).then((d) => setAdmins((d?.items || []).filter((u) => !['Student', 'Staff', 'SuperAdmin'].includes(u.role)))).catch(() => setAdmins([]))
@@ -37,7 +40,22 @@ export default function SchoolAdminsPage({ onNavigate }) {
   useEffect(() => { load() }, [])
 
   const active = admins.filter((a) => a.isActive).length
-  const visible = roleFilter === 'All roles' ? admins : admins.filter((r) => (ROLE_LABEL[r.role] || r.role) === roleFilter)
+  const institutionOptions = ['All Institutions', ...new Set(admins.map((a) => a.institutionName).filter(Boolean))]
+  const visible = admins.filter((r) => {
+    const roleMatches = roleFilter === 'All roles' || (ROLE_LABEL[r.role] || r.role) === roleFilter
+    const institutionMatches = institutionFilter === 'All Institutions' || r.institutionName === institutionFilter
+    const statusMatches = statusFilter === 'All Statuses'
+      || (statusFilter === 'Active' && r.isActive)
+      || (statusFilter === 'Deactivated' && !r.isActive)
+    const haystack = `${r.firstName || ''} ${r.lastName || ''} ${r.email || ''} ${r.institutionName || ''}`.toLowerCase()
+    return roleMatches && institutionMatches && statusMatches && (!search.trim() || haystack.includes(search.trim().toLowerCase()))
+  })
+  const clearFilters = () => {
+    setSearch('')
+    setRoleFilter('All roles')
+    setInstitutionFilter('All Institutions')
+    setStatusFilter('All Statuses')
+  }
   const stats = [
     { title: 'School administrators', value: pad(admins.length), sub: 'On the platform' },
     { title: 'Active', value: pad(active), sub: 'Can sign in and publish' },
@@ -95,23 +113,38 @@ export default function SchoolAdminsPage({ onNavigate }) {
 
           {/* Table card */}
           <div className="flex flex-col overflow-hidden rounded-[10px] border border-[#DBDBDB] bg-white">
-            <div className="flex items-center gap-2 border-b border-[#E5E7EB] px-4 py-2">
-              <span className="px-2 text-sm font-semibold leading-[15.2px] text-[#344054]">All Administrators</span>
-            </div>
-
             {/* Filter bar */}
             <div className="flex flex-col gap-4 px-4 pt-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex w-full max-w-[640px] flex-wrap items-center gap-4">
-                <SearchInput placeholder="Search by name, email or institution" />
+                <SearchInput placeholder="Search by name, email or institution" value={search} onChange={(e) => setSearch(e.target.value)} />
                 <FilterSelect value={roleFilter} onChange={setRoleFilter} options={['All roles', 'Institution administrator', 'Faculty administrator', 'Department administrator']} />
               </div>
               <div className="flex flex-wrap items-center gap-4">
-                <FilterSelect value="All Institutions" options={['All Institutions', 'Lead City University', 'University of Ibadan', 'Obafemi Awolowo University']} />
-                <FilterSelect value="All Statuses" options={['All Statuses', 'Active', 'Deactivated']} />
-                <button type="button" className="text-sm font-medium leading-[15.2px] text-[#4F46E5]">
+                <FilterSelect value={institutionFilter} onChange={setInstitutionFilter} options={institutionOptions} />
+                <FilterSelect value={statusFilter} onChange={setStatusFilter} options={['All Statuses', 'Active', 'Deactivated']} />
+                <button type="button" onClick={clearFilters} className="text-sm font-medium leading-[15.2px] text-[#4F46E5]">
                   Clear filters
                 </button>
               </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 px-4 pt-6">
+              {[
+                { label: 'Total:', value: admins.length, filter: 'All Statuses' },
+                { label: 'Active', value: active, filter: 'Active', dot: '#109E75' },
+                { label: 'Deactivated', value: admins.length - active, filter: 'Deactivated', dot: '#D85A30' },
+              ].map((chip) => (
+                <button
+                  key={chip.label}
+                  type="button"
+                  onClick={() => setStatusFilter(chip.filter)}
+                  className="flex h-11 items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-5 text-sm leading-[15.2px] text-[#344054]"
+                >
+                  {chip.dot && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: chip.dot }} />}
+                  <span>{chip.label}</span>
+                  <span className="font-semibold">{pad(chip.value)}</span>
+                </button>
+              ))}
             </div>
 
             {/* Table */}
@@ -170,7 +203,7 @@ export default function SchoolAdminsPage({ onNavigate }) {
               </table>
             </div>
 
-            <PageCountFooter />
+            <PageCountFooter left={`Showing ${visible.length ? `1–${visible.length}` : 0} of ${visible.length} results`} />
           </div>
         </main>
       {leadOpen && (

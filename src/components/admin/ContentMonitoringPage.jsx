@@ -10,6 +10,7 @@ const TABS = [
   { id: 'news', label: 'News', type: 'News' },
   { id: 'announcements', label: 'Announcements', type: 'Announcement' },
   { id: 'events', label: 'Events', type: 'Event' },
+  { id: 'calendar', label: 'Calendar', type: 'Calendar' },
 ]
 
 const SourcePill = ({ name }) => (
@@ -39,34 +40,59 @@ function CalendarApprovals() {
     } catch (e) { setMsg(`Action failed: ${e.message}`); }
   };
   return (
-    <section className="rounded-2xl border border-amber-300 bg-amber-50 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h2 className="text-sm font-semibold">Calendar approvals</h2><p className="text-xs text-[#6B7280]">Contract §17: pending academic calendars need a platform publish or reject (with reason).</p></div>
+    <div className="flex flex-col overflow-hidden rounded-[10px] border border-[#DBDBDB] bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4">
+        <div>
+          <h2 className="text-sm font-semibold text-[#344054]">Calendar approvals</h2>
+          <p className="text-xs text-[#6B7280]">Review pending academic calendars.</p>
+        </div>
         <select className="h-9 rounded-lg border border-[#D1D5DC] bg-white px-3 text-sm" value={inst} onChange={(e) => { setInst(e.target.value); load(e.target.value); }}>
           <option value="">Choose institution…</option>
           {schools.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
         </select>
       </div>
-      {msg && <p className="mt-2 text-xs text-[#6B7280]">{msg}</p>}
-      {rows && rows.length === 0 && <p className="mt-2 text-xs text-[#6B7280]">No pending calendars for this institution.</p>}
-      {rows && rows.map((c) => (
-        <div key={c.id} className="mt-2 rounded-lg border border-amber-200 bg-white p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div><b className="text-sm">{c.title}</b> <span className="ml-2 text-xs text-[#6B7280]">{c.academicSession}</span></div>
-            <div className="flex gap-2">
-              <button type="button" className="h-8 rounded-lg bg-[#16A34A] px-3 text-xs font-semibold text-white" onClick={() => decide(c.id, true)}>Publish</button>
-              <button type="button" className="h-8 rounded-lg border border-[#D1D5DC] px-3 text-xs" onClick={() => { setRejectFor(rejectFor === c.id ? null : c.id); setReason(''); }}>Reject</button>
-            </div>
-          </div>
-          {rejectFor === c.id && (
-            <div className="mt-2 flex gap-2">
-              <input className="h-9 flex-1 rounded-lg border border-[#D1D5DC] px-3 text-sm" placeholder="Reason (required)" value={reason} onChange={(e) => setReason(e.target.value)} />
-              <button type="button" className="h-9 rounded-lg bg-[#D92D20] px-3 text-xs font-semibold text-white" disabled={reason.trim().length < 3} onClick={() => decide(c.id, false, reason.trim())}>Confirm reject</button>
-            </div>
-          )}
-        </div>
-      ))}
-    </section>
+      {msg && <p role="status" className="mx-4 mb-3 rounded-lg bg-[#F9FAFB] px-3 py-2 text-xs text-[#6B7280]">{msg}</p>}
+      <div className="overflow-x-auto px-4">
+        <table className="w-full min-w-[700px] table-fixed border-collapse">
+          <thead>
+            <tr className="h-10">
+              <TH sort className="w-[36%]">CALENDAR</TH>
+              <TH sort className="w-[18%]">ACADEMIC SESSION</TH>
+              <TH sort className="w-[16%]">STATUS</TH>
+              <TH sort className="w-[16%]">SUBMITTED</TH>
+              <TH className="w-[14%]">ACTION</TH>
+            </tr>
+          </thead>
+          <tbody>
+            {rows === null ? (
+              <tr><td colSpan={5} className="px-4 py-10 text-center text-sm text-[#6B7280]">Choose an institution to view calendar approvals.</td></tr>
+            ) : rows.length === 0 ? (
+              <tr><td colSpan={5} className="px-4 py-10 text-center text-sm text-[#6B7280]">No pending calendars for this institution.</td></tr>
+            ) : rows.map((c, i) => (
+              <tr key={c.id} className={`h-[58px] ${i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}>
+                <td className="px-4 py-2.5 text-sm font-medium text-[#344054]">{c.title}</td>
+                <td className="px-4 py-2.5 text-[13px] text-[#6B7280]">{c.academicSession}</td>
+                <td className="px-4 py-2.5"><StatusCell status={c.status} /></td>
+                <td className="px-4 py-2.5 text-[13px] text-[#6B7280]">{timeAgo(c.publishedAt) || '—'}</td>
+                <td className="px-4 py-2.5">
+                  <div className="flex gap-2">
+                    <button type="button" className="h-8 rounded-lg bg-[#4F46E5] px-3 text-xs font-semibold text-white" onClick={() => decide(c.id, true)}>Approve</button>
+                    <button type="button" className="h-8 rounded-lg border border-[#D1D5DC] px-3 text-xs" onClick={() => { setRejectFor(rejectFor === c.id ? null : c.id); setReason(''); }}>Reject</button>
+                  </div>
+                  {rejectFor === c.id && (
+                    <div className="mt-2 flex gap-2">
+                      <input className="h-9 min-w-0 flex-1 rounded-lg border border-[#D1D5DC] px-3 text-sm" placeholder="Reason (required)" value={reason} onChange={(e) => setReason(e.target.value)} />
+                      <button type="button" className="h-9 shrink-0 rounded-lg bg-[#D92D20] px-3 text-xs font-semibold text-white" disabled={reason.trim().length < 3} onClick={() => decide(c.id, false, reason.trim())}>Confirm</button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {rows && <PageCountFooter left={`Showing ${rows.length} pending calendars`} />}
+    </div>
   );
 }
 
@@ -74,15 +100,37 @@ export default function ContentMonitoringPage({ onNavigate }) {
   const [tab, setTab] = useState('all')
   const [q, setQ] = useState('')
   const [statusFilter, setStatusFilter] = useState('All Statuses')
+  const [institutionFilter, setInstitutionFilter] = useState('All Institutions')
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [totalViews, setTotalViews] = useState(null)
+  const [analyticsError, setAnalyticsError] = useState('')
   const [menu, setMenu] = useState(null)
   const [navOpen, setNavOpen] = useState(false)
+
+  useEffect(() => {
+    adminApi.analytics()
+      .then((data) => {
+        const rawValue = data?.totals?.uniqueContentViews
+        const value = Number(rawValue)
+        if (rawValue == null || !Number.isFinite(value)) {
+          setAnalyticsError('The analytics response did not include total view data.')
+          return
+        }
+        setTotalViews(value)
+      })
+      .catch((e) => setAnalyticsError(e.message))
+  }, [])
 
   const load = useCallback(() => {
     setLoading(true)
     setError('')
+    if (tab === 'calendar') {
+      setRows([])
+      setLoading(false)
+      return
+    }
     const type = TABS.find((t) => t.id === tab)?.type || ''
     Promise.all([
       contentApi.list({ type, search: q.trim(), page: 1, pageSize: 20 }),
@@ -117,15 +165,21 @@ export default function ContentMonitoringPage({ onNavigate }) {
   }, [load])
 
   const live = rows.filter((r) => r.status === 'Published').length
-  const shown = statusFilter === 'All Statuses' ? rows : rows.filter((r) => r.status === statusFilter)
+  const institutionOptions = ['All Institutions', ...new Set(rows.map((r) => r.institutionName || r.schoolName).filter(Boolean))]
+  const shown = rows.filter((r) => {
+    const statusMatches = statusFilter === 'All Statuses' || r.status === statusFilter
+    const institutionMatches = institutionFilter === 'All Institutions' || (r.institutionName || r.schoolName) === institutionFilter
+    return statusMatches && institutionMatches
+  })
   const drafts = rows.filter((r) => r.status === 'Draft').length
   const down = rows.filter((r) => r.status === 'Archived').length
+  const urgent = rows.filter((r) => r.urgency === 'Urgent').length
 
   const STATS = [
     { title: 'Content items', value: String(rows.length).padStart(2, '0'), sub: 'Loaded from API' },
     { title: 'Live', value: String(live).padStart(2, '0'), sub: `${drafts} drafts · ${down} taken down` },
-    { title: 'Pending approval', value: String(rows.filter((r) => r.status === 'PendingApproval').length).padStart(2, '0'), sub: 'Awaiting super admin' },
-    { title: 'Rejected', value: String(rows.filter((r) => r.status === 'Rejected').length).padStart(2, '0'), sub: 'Never published' },
+    { title: 'Urgent announcements', value: String(urgent).padStart(2, '0'), sub: 'Live right now' },
+    { title: 'Total views', value: totalViews === null ? '—' : totalViews.toLocaleString(), sub: 'Across all content' },
   ]
 
   return (
@@ -135,13 +189,14 @@ export default function ContentMonitoringPage({ onNavigate }) {
 
         <main className="flex min-w-0 flex-1 flex-col gap-4 md:gap-6">
           <Topbar title="Content monitoring" subtitle="Everything schools publish" onMenu={() => setNavOpen(true)} />
-          <CalendarApprovals />
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4">
             {STATS.map((s) => (
               <StatCard key={s.title} {...s} />
             ))}
           </div>
+
+          {analyticsError && <p className="rounded-lg bg-[#FEE4E2] px-4 py-3 text-sm text-[#D92D20]">Could not load view totals: {analyticsError}</p>}
 
           <div className="flex flex-wrap gap-3">
             {TABS.map((t) => (
@@ -158,74 +213,104 @@ export default function ContentMonitoringPage({ onNavigate }) {
             ))}
           </div>
 
-          <div className="flex flex-col overflow-hidden rounded-[10px] border border-[#DBDBDB] bg-white">
-            <div className="flex flex-wrap items-center justify-between gap-4 px-4 pt-6">
-              <div className="flex flex-wrap items-center gap-4">
-                <SearchInput placeholder="Search contents, author or audience.." value={q} onChange={(e) => setQ(e.target.value)} />
-                <FilterSelect value="All Institutions" options={['All Institutions']} />
-                <FilterSelect value={statusFilter} onChange={setStatusFilter} options={['All Statuses', 'Published', 'PendingApproval', 'Draft', 'Rejected', 'Archived']} />
+          {tab === 'calendar' ? (
+            <CalendarApprovals />
+          ) : (
+            <div className="flex flex-col overflow-hidden rounded-[10px] border border-[#DBDBDB] bg-white">
+              <div className="flex flex-wrap items-center justify-between gap-4 px-4 pt-6">
+                <div className="flex flex-wrap items-center gap-4">
+                  <SearchInput placeholder="Search contents, author or audience.." value={q} onChange={(e) => setQ(e.target.value)} />
+                  <FilterSelect value={institutionFilter} onChange={setInstitutionFilter} options={institutionOptions} />
+                  <FilterSelect value={statusFilter} onChange={setStatusFilter} options={['All Statuses', 'Published', 'PendingApproval', 'Draft', 'Rejected', 'Archived']} />
+                </div>
+                <button
+                  type="button"
+                  className="text-sm font-medium leading-[15.2px] text-[#4F46E5]"
+                  onClick={() => { setQ(''); setStatusFilter('All Statuses'); setInstitutionFilter('All Institutions'); }}
+                >
+                  Clear filters
+                </button>
               </div>
-              <button type="button" className="text-sm font-medium leading-[15.2px] text-[#4F46E5]" onClick={() => { setQ(''); setTab('all') }}>
-                Clear filters
-              </button>
-            </div>
 
-            {error && (
-              <p className="mx-4 mt-4 rounded-lg bg-[#FEE4E2] px-4 py-3 text-sm leading-5 text-[#D92D20]">{error}</p>
-            )}
+              {error && (
+                <p className="mx-4 mt-4 rounded-lg bg-[#FEE4E2] px-4 py-3 text-sm leading-5 text-[#D92D20]">{error}</p>
+              )}
 
-            <div className="overflow-x-auto px-4 pt-6">
-              <table className="w-full min-w-[1000px] table-fixed border-collapse">
-                <thead>
-                  <tr className="h-10">
-                    <TH sort className="w-[26%]">CONTENT</TH>
-                    <TH sort className="w-[12%]">TYPE</TH>
-                    <TH sort className="w-[14%]">SOURCE</TH>
-                    <TH sort className="w-[16%]">AUDIENCE</TH>
-                    <TH sort className="w-[12%]">STATUS</TH>
-                    <TH sort className="w-[12%]">PUBLISHED</TH>
-                    <TH className="w-[8%]">ACTION</TH>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-10 text-center text-sm text-[#6B7280]">Loading content…</td>
+              <div className="flex flex-wrap gap-3 px-4 pt-6">
+                {[
+                  { label: 'Total:', value: rows.length, filter: 'All Statuses' },
+                  { label: 'Live', value: live, filter: 'Published', dot: '#109E75' },
+                  { label: 'Draft', value: drafts, filter: 'Draft', dot: '#D85A30' },
+                  { label: 'Taken down', value: down, filter: 'Archived', dot: '#D83030' },
+                ].map((chip) => (
+                  <button
+                    key={chip.label}
+                    type="button"
+                    onClick={() => setStatusFilter(chip.filter)}
+                    className="flex h-11 items-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-5 text-sm leading-[15.2px] text-[#344054]"
+                  >
+                    {chip.dot && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: chip.dot }} />}
+                    <span>{chip.label}</span>
+                    <span className="font-semibold">{String(chip.value).padStart(2, '0')}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="overflow-x-auto px-4 pt-6">
+                <table className="w-full min-w-[1000px] table-fixed border-collapse">
+                  <thead>
+                    <tr className="h-10">
+                      <TH sort className="w-[24%]">CONTENT</TH>
+                      <TH sort className="w-[9%]">TYPE</TH>
+                      <TH sort className="w-[12%]">SOURCE</TH>
+                      <TH sort className="w-[14%]">INSTITUTION</TH>
+                      <TH sort className="w-[15%]">AUDIENCE</TH>
+                      <TH sort className="w-[10%]">STATUS</TH>
+                      <TH sort className="w-[10%]">REACH · OPENED</TH>
+                      <TH className="w-[6%]">ACTION</TH>
                     </tr>
-                  ) : shown.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-10 text-center text-sm text-[#6B7280]">No content found.</td>
-                    </tr>
-                  ) : (
-                    shown.map((r, i) => (
-                      <tr key={r.id} className={`h-[58px] ${i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}>
-                        <td className="px-4 py-2.5">
-                          <div className="flex flex-col gap-1">
-                            <span className="truncate text-[15px] font-semibold leading-4 text-[#344054]">{r.title}</span>
-                            <span className="truncate text-[13px] leading-[14px] text-[#6B7280]">{r.body}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-2.5"><UrgencyPill urgency={r.urgency} type={r.type} /></td>
-                        <td className="px-4 py-2.5"><SourcePill name={r.sourceName} /></td>
-                        <td className="truncate px-4 py-2.5 text-[13px] leading-[14px] text-[#6B7280]">{r.sourceType}</td>
-                        <td className="px-4 py-2.5"><StatusCell status={r.status} /></td>
-                        <td className="whitespace-nowrap px-4 py-2.5 text-[13px] leading-[14px] text-[#6B7280]">{timeAgo(r.publishedAt) || '—'}</td>
-                        <td className="px-4 py-2.5">
-                          <DotsMenu
-                            open={menu === i}
-                            onToggle={() => setMenu(menu === i ? null : i)}
-                            items={menuItemsFor(r, () => setMenu(null), (m) => setError(m))}
-                          />
-                        </td>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-10 text-center text-sm text-[#6B7280]">Loading content…</td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    ) : shown.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-10 text-center text-sm text-[#6B7280]">No content found.</td>
+                      </tr>
+                    ) : (
+                      shown.map((r, i) => (
+                        <tr key={r.id} className={`h-[58px] ${i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}>
+                          <td className="px-4 py-2.5">
+                            <div className="flex flex-col gap-1">
+                              <span className="truncate text-[15px] font-semibold leading-4 text-[#344054]">{r.title}</span>
+                              <span className="truncate text-[13px] leading-[14px] text-[#6B7280]">{r.sourceName || 'Official School'} · {timeAgo(r.publishedAt) || '—'}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2.5"><UrgencyPill urgency={r.urgency} type={r.type} /></td>
+                          <td className="px-4 py-2.5"><SourcePill name={r.sourceName} /></td>
+                          <td className="truncate px-4 py-2.5 text-[13px] leading-[14px] text-[#6B7280]">{r.institutionName || r.schoolName || '—'}</td>
+                          <td className="truncate px-4 py-2.5 text-[13px] leading-[14px] text-[#6B7280]">{r.audience || r.sourceType || '—'}</td>
+                          <td className="px-4 py-2.5"><StatusCell status={r.status} /></td>
+                          <td className="whitespace-nowrap px-4 py-2.5 text-[13px] leading-[14px] text-[#6B7280]">{r.reach ?? '—'} · {r.openRate == null ? '—' : `${r.openRate}%`}</td>
+                          <td className="px-4 py-2.5">
+                            <DotsMenu
+                              open={menu === i}
+                              onToggle={() => setMenu(menu === i ? null : i)}
+                              items={menuItemsFor(r, () => setMenu(null), (m) => setError(m))}
+                            />
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
-            <PageCountFooter left={`Showing ${rows.length} results`} />
-          </div>
+              <PageCountFooter left={`Showing ${shown.length} results`} />
+            </div>
+          )}
         </main>
       </div>
     </div>
